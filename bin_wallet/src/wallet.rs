@@ -65,16 +65,20 @@ impl Wallet {
         // user_id format:  "MDgCMQCqrJ1yIJ7cDQIdTuS+4CkKn/tQPN7bZFbbGCBhvjQxs71f6Vu+sD9eh8JGpfiZSckCAwEAAQ=="
         let public_key = self.pub_key_pem.trim_start_matches("-----BEGIN RSA PUBLIC KEY-----\n").trim_end_matches("\n-----END RSA PUBLIC KEY-----\n");
         let user_id = public_key.replace("\n","");
+        println!("{}", user_id);
         user_id
     }
 
     /// Sign a message using the private key and return the signature as a Base64 encoded string.
     /// To check if your implementation is correct, you can validate it using the `verify` method below in the unit tests.
     pub fn sign(&self, message: &str) -> String {
-        // Please fill in the blank
         // Sign the message with the private key, and return the signature in Base64 format
-        todo!();
-        
+        let private_key = RsaPrivateKey::from_pkcs1_pem(&self.priv_key_pem).unwrap();
+        let signing_key = SigningKey::<Sha256>::new(private_key);
+        let mut rng = rand::thread_rng();
+        let signature = signing_key.sign_with_rng(&mut rng, message.as_bytes());
+        let encoded = Base64::encode_string(signature.as_bytes());
+        encoded
     }
 
     /// Verify a signature using the public key. The signature is a string in Base64 format.

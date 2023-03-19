@@ -101,7 +101,7 @@ fn main() {
     use wallet::Wallet;
     let initialise_input = read_input_from_stdin();
     let wallet : Wallet = serde_json::from_str(&initialise_input).unwrap();
-    
+    //unsure if should put this here, currently it's here cause if define below wallet wont be in the overarching scope
     let init_resp_str = IPCMessageResp::Initialized;
     //craft into string
     let init_resp_print = serde_json::to_string(&init_resp_str).unwrap();
@@ -158,7 +158,7 @@ mod test {
     /// This test reads a wallet from a file and uses it to sign and verify a message.
     #[test]
     fn test_bin_wallet_signing_and_verifying() {
-        let bin_wallet: Wallet = serde_json::from_str(&read_string_from_file("../tests/_secrets/Wallet.0.json")).unwrap();
+        let bin_wallet: Wallet = serde_json::from_str(&read_string_from_file("../tests/_secrets/Wallet.A.json")).unwrap();
         println!("Private key Pem:\n{}\n", bin_wallet.priv_key_pem);
         println!("Public key Pem:\n{}\n", bin_wallet.pub_key_pem);
         let msg = "hello world";
