@@ -37,10 +37,20 @@ impl Wallet {
     /// It will generate a new pair of keys.
     /// During the evaluation, you don't need to generate new keys.
     pub fn new(user_name: String, bits: usize) -> Wallet {
-        // Please fill in the blank
         // Generate new key pairs, and return as a wallet
-        todo!();
-        
+        let mut rng = rand::thread_rng();
+        let new_private_key = RsaPrivateKey::new(&mut rng, bits).expect("Error generating Rsa Key");
+        let new_public_key = RsaPublicKey::from(&new_private_key);    
+        let pem_public_key = new_public_key.to_pkcs1_pem(rsa::pkcs1::LineEnding::LF).unwrap();
+        let pem_private_key = new_private_key.to_pkcs1_pem(rsa::pkcs1::LineEnding::LF).unwrap();
+        let pem_private_key_str = String::from(AsRef::<str>::as_ref(&pem_private_key));
+        let wallet = Wallet{
+            user_name,
+            priv_key_pem:pem_private_key_str,
+            pub_key_pem:pem_public_key
+        };
+        wallet
+
     }
 
     /// return the user name
@@ -50,12 +60,12 @@ impl Wallet {
 
     /// return the user id (transformed from the public key)
     pub fn get_user_id(&self) -> String {
-        // Please fill in the blank
         // Get user id from the public key by changing the format (strip off the first and last lines and join the middle lines)
         // Pub key format:  "-----BEGIN RSA PUBLIC KEY-----\nMDgCMQCqrJ1yIJ7cDQIdTuS+4CkKn/tQPN7bZFbbGCBhvjQxs71f6Vu+sD9eh8JG\npfiZSckCAwEAAQ==\n-----END RSA PUBLIC KEY-----\n"
         // user_id format:  "MDgCMQCqrJ1yIJ7cDQIdTuS+4CkKn/tQPN7bZFbbGCBhvjQxs71f6Vu+sD9eh8JGpfiZSckCAwEAAQ=="
-        todo!();
-        
+        let public_key = self.pub_key_pem.trim_start_matches("-----BEGIN RSA PUBLIC KEY-----\n").trim_end_matches("\n-----END RSA PUBLIC KEY-----\n");
+        let user_id = public_key.replace("\n","");
+        user_id
     }
 
     /// Sign a message using the private key and return the signature as a Base64 encoded string.
