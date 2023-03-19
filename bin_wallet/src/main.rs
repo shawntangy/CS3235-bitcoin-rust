@@ -42,6 +42,16 @@ fn append_string_to_file(filepath: &str, content: String) {
         .unwrap();
 }
 
+// Read the input from stdin and output as a string
+fn read_input_from_stdin() -> String {
+    //create mutable string
+    let mut stdin_input = String::new();
+    //read into stdin_input
+    io::stdin().read_line(&mut stdin_input).unwrap();
+    println!("User Input {} ",stdin_input);
+    stdin_input
+}
+
 /// The enum representing IPC message requests from the stdin
 #[derive(Serialize, Deserialize, Debug, Clone)]
 enum IPCMessageReq {
@@ -78,9 +88,9 @@ fn main() {
     // Otherwise, it will proceed to the normal execution
     let maybe_policy_path = std::env::args().nth(1);
     if let Some(policy_path) = maybe_policy_path {
-        // Please fill in the blank
         // If the first param is provided, read the seccomp config and apply it
-        
+        // let policy = read_string_from_file(&policy_path);
+        // seccompiler::apply_filter(policy.as_bytes()).unwrap();
     }
 
     // The main logic of the bin_wallet starts here
@@ -89,9 +99,45 @@ fn main() {
     // After that, there can be arbitrary number of SignRequest, VerifyRequest, and GetUserInfo calls.
     // Eventually, the Quit call will be received and the program will exit.
     use wallet::Wallet;
-    // Please fill in the blank
-    todo!();
+    let initialise_input = read_input_from_stdin();
+    let wallet : Wallet = serde_json::from_str(&initialise_input).unwrap();
     
+    let init_resp_str = IPCMessageResp::Initialized;
+    //craft into string
+    let init_resp_print = serde_json::to_string(&init_resp_str).unwrap();
+    println!("{}", init_resp_print);
+
+    // loop for reading in input from stdin
+    loop {
+        let stdin_input = read_input_from_stdin();
+        // extracting out the request
+        let ipc_msg_req : IPCMessageReq = serde_json::from_str(&stdin_input).unwrap();
+        let ipc_msg_resp = match ipc_msg_req { // match function for all 5 types to generate the response
+            IPCMessageReq::Quit => {
+                break;
+            }
+            IPCMessageReq::Initialize(json_str) => {
+                IPCMessageResp::Initialized
+            } 
+            IPCMessageReq::SignRequest(msg_to_sign) => {
+                let signature : String = wallet.sign(&msg_to_sign);
+                IPCMessageResp::SignResponse(msg_to_sign, signature)
+            }
+            IPCMessageReq::VerifyRequest(msg_to_verify, signature_b64 ) => {
+                let result = wallet.verify(&msg_to_verify, &signature_b64);
+                IPCMessageResp::VerifyResponse(result, msg_to_verify)
+            }
+            IPCMessageReq::GetUserInfo => {
+                IPCMessageResp::UserInfo(wallet.get_user_name(), wallet.get_user_id())
+            }
+        };
+        
+        //craft into string
+        let resp_str = serde_json::to_string(&ipc_msg_resp).unwrap();
+        println!("{}", resp_str);
+
+    }
+
     println!("{}\n", serde_json::to_string(&IPCMessageResp::Quitting).unwrap());
 }
 
