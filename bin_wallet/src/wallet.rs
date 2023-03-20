@@ -33,6 +33,13 @@ pub struct Wallet {
 
 
 impl Wallet {
+
+    /// Default function
+    pub fn default() -> Wallet {
+        Wallet{user_name: String::from(""),priv_key_pem: String::from(""),pub_key_pem: String::from("")}
+    }
+
+
     /// Create a new wallet with a given user name and key size.
     /// It will generate a new pair of keys.
     /// During the evaluation, you don't need to generate new keys.
@@ -65,7 +72,7 @@ impl Wallet {
         // user_id format:  "MDgCMQCqrJ1yIJ7cDQIdTuS+4CkKn/tQPN7bZFbbGCBhvjQxs71f6Vu+sD9eh8JGpfiZSckCAwEAAQ=="
         let public_key = self.pub_key_pem.trim_start_matches("-----BEGIN RSA PUBLIC KEY-----\n").trim_end_matches("\n-----END RSA PUBLIC KEY-----\n");
         let user_id = public_key.replace("\n","");
-        println!("{}", user_id);
+        //println!("{}", user_id);
         user_id
     }
 
