@@ -35,6 +35,7 @@ impl MerkleTree {
     /// The last list is the list with only one hash, called the Merkle root.
     /// - `txs`: a list of transactions
     /// - The return value is the root hash of the merkle tree
+    
     pub fn create_merkle_tree(txs: Vec<Transaction>) -> (String, MerkleTree) {
         if txs.len() == 0 {
             panic!("create_merkel_tree get empty Transaction Vector.");
@@ -49,6 +50,13 @@ impl MerkleTree {
         }
         // Get remaining lists of hashes of previous list
         while (merkle_tree_hashes.last().unwrap().len() != 1) {
+            if merkle_tree_hashes.last().unwrap().len() % 2 != 0 { // if odd number of nodes, duplicate the last node
+                let i = merkle_tree_hashes.len() - 1;
+                let j = merkle_tree_hashes[i].len() - 1;
+                let temp = merkle_tree_hashes[i][j].clone();
+                merkle_tree_hashes[i].push(temp);
+            }
+
             let hash_list = merkle_tree_hashes.last().unwrap().to_owned();
             let len = hash_list.len();
             let mut i = 0;
@@ -63,7 +71,6 @@ impl MerkleTree {
         }
         return (merkle_tree_hashes.last().unwrap().get(0).to_owned().unwrap().to_string(), MerkleTree { hashes : merkle_tree_hashes});
     }
-
     // Please fill in the blank
     // Depending on your implementation, you may need additional functions here.
 }
