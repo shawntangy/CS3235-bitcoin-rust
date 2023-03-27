@@ -63,22 +63,84 @@ impl Miner {
     /// - return: an optional value with the solution if the puzzle is solved, or None if the puzzle is cancelled.
     pub fn solve_puzzle(miner_p: Arc<Mutex<Miner>>, puzzle: String, nonce_len: u16, leading_zero_len: u16, thread_count: u16, thread_0_seed: u64, cancellation_token: Arc<RwLock<bool>>) -> Option<PuzzleSolution> {
         
-        // Please fill in the blank
         // In this function, you are expected to start multiple threads for solving the puzzle.
         // The threads should be spawned and joined in this function.
         // If any of the threads finds a solution, other threads should stop.
         // Additionally, if the cancellation_token is set to true, all threads should stop.
         // The purpose of the cancellation_token is to allow the miner to stop the computation when other nodes have already solved the exact same puzzle.
-        todo!();
+        let mut handles = vec![];
+
+        // Create a channel to communicate between threads.
+        let (tx, rx) = std::sync::mpsc::channel::<Option<PuzzleSolution>>();
+        let rx = Arc::new(Mutex::new(rx));
+        // Spawn threads to search for a solution.
+        for i in 0..thread_count {
+            let tx = tx.clone();
+            //let rx = rx.clone();
+            let miner_p = miner_p.clone();
+            let cancellation_token = cancellation_token.clone();
+            let puzzle = puzzle.clone();
+            // set rng seed from function
+            let mut rng = Pcg32::seed_from_u64(thread_0_seed + u64::from(i));
+            let handle = thread::spawn(move || {                
+                loop {
+                    
+                    // Check if the cancellation_token is true to break the loop
+                    if *cancellation_token.read().unwrap() {
+                        break;
+                    }
+
+                    let nonce = Alphanumeric.sample_string(&mut rng, nonce_len.into());
+
+                    // Combine nonce and puzzle to get hash
+                    let combined_hash = format!("{}{}", nonce, puzzle);
+                    let hash = Sha256::digest(combined_hash.as_bytes());
+                    
+                    // Check if the hash satisfies the difficulty level.
+                    let hash_str = format!("{:x}", hash);
+                    //println!("supposed hash_str: {}",hash_str);
+                    if hash_str.starts_with(&"0".repeat(leading_zero_len as usize)) {
+                        println!("Matched: {}",hash_str);
+                        let mut token = cancellation_token.write().unwrap();
+                        *token = true;
+                        let ans = PuzzleSolution{
+                            puzzle,
+                            nonce,
+                            hash: hash_str
+                        };
+                        tx.send(Some(ans))
+                        .unwrap();
+                        break;
+                    }
+                }
+            });
+
+            handles.push(handle);
+        }
+
+        // Wait for the threads to finish.
+        for handle in handles {
+            handle.join().unwrap();
+        }
+
+        // Get the first solution found by any thread.
+        let x = if let Ok(solution) = rx.lock().unwrap().try_recv() {
+            solution
+        }else{
+            None
+        }; x
+        
         
     } 
     
     /// Get status information of the miner for debug printing.
     pub fn get_status(&self) -> BTreeMap<String, String> {
-        // Please fill in the blank
         // For debugging purpose, you can return any dictionary of strings as the status of the miner. 
         // It should be displayed in the Client UI eventually.
-        todo!();
+        let mut miner_status = BTreeMap::new();
+        miner_status.insert("is_running".to_string(), self.is_running.to_string());
+        miner_status
+        // this is not done cause idk what to put inside
         
     }
 }
