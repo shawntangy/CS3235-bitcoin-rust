@@ -70,41 +70,43 @@ impl Miner {
         // The purpose of the cancellation_token is to allow the miner to stop the computation when other nodes have already solved the exact same puzzle.
         let mut handles = vec![];
         let mut solutions = vec![];
-        let mut rng = Pcg32::seed_from_u64(thread_0_seed); 
 
         // Create a channel to communicate between threads.
         let (tx, rx) = std::sync::mpsc::channel::<Option<PuzzleSolution>>();
-
+        let rx = Arc::new(Mutex::new(rx));
         // Spawn threads to search for a solution.
         for i in 0..thread_count {
             let tx = tx.clone();
+            let rx = rx.clone();
             let miner_p = miner_p.clone();
             let cancellation_token = cancellation_token.clone();
             let puzzle = puzzle.clone();
             // set rng seed from function
-            let rng = Pcg32::seed_from_u64(thread_0_seed + u64::from(i));
-
+            let mut rng = Pcg32::seed_from_u64(thread_0_seed + u64::from(i));
+            //println!("rng {:?}",rng);
             let handle = thread::spawn(move || {
                 // Create empty nonce first
-                let mut nonce = String::new();
+                //let mut nonce = String::new();
+                //let mut rng = rng.clone(); //unsure if need this
+                
                 loop {
                     // Check if other thread found the solution
-                    if rx.try_recv().is_ok() {
+                    if rx.lock().unwrap().try_recv().is_ok() {
                         return;
                     }
-
+                    
                     // Check if the cancellation_token is set to end early
                     if *cancellation_token.read().unwrap() {
                         return;
                     }
 
                     // Generate a new nonce.
-                    let rng = rng.clone(); //unsure if need this
-                    nonce = rng
-                        .sample_iter(&Alphanumeric)
-                        .take(nonce_len as usize)
-                        .map(char::from)
-                        .collect();
+                    // nonce = rng
+                    //     .sample_iter(&Alphanumeric)
+                    //     .take(nonce_len as usize)
+                    //     .map(char::from)
+                    //     .collect();
+                    let nonce = Alphanumeric.sample_string(&mut rng, nonce_len.into());
 
                     // Combine nonce and puzzle to get hash
                     let combined_hash = format!("{}{}", nonce, puzzle);
@@ -112,7 +114,11 @@ impl Miner {
                     
                     // Check if the hash satisfies the difficulty level.
                     let hash_str = format!("{:x}", hash);
+                    //println!("supposed hash_str: {}",hash_str);
                     if hash_str.starts_with(&"0".repeat(leading_zero_len as usize)) {
+                        println!("Matched: {}",hash_str);
+                        let mut token = cancellation_token.write().unwrap();
+                        *token = true;
                         tx.send(Some(PuzzleSolution {
                             puzzle,
                             nonce,
@@ -134,7 +140,7 @@ impl Miner {
 
         // Get the first solution found by any thread.
         let mut solution:Option<PuzzleSolution> = None;
-        while let Ok(solution) = rx.try_recv() {
+        while let Ok(solution) = rx.lock().unwrap().try_recv() {
             solutions.push(solution);
             
         }
