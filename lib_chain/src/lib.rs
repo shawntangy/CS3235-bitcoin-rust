@@ -41,7 +41,7 @@ mod tests {
 
     /// Test the generation of merkle tree.
     #[test]
-    fn test_merkle_tree() {
+    fn test_merkle_tree() { 
         let tx1 = Transaction {
             sender: "MDgCMQCqrJ1yIJ7cDQIdTuS+4CkKn/tQPN7bZFbbGCBhvjQxs71f6Vu+sD9eh8JGpfiZSckCAwEAAQ==".to_string(),
             receiver: "MDgCMQDZDExOs97sRTnQLYtgFjDKpDzmO7Uo5HPP62u6MDimXBpZtGxtwa8dhJe5NBIsJjUCAwEAAQ==".to_string(),
@@ -115,12 +115,27 @@ mod tests {
             let block_node = serde_json::from_str::<BlockNode>(&block_json).unwrap();
             default_btree.add_block(block_node, 5);
         }
-        assert!(default_btree.working_block_id == "0000052b06a4d5c725f3713aed93d4b4e1da93a7b4f7cb870ef1f7e6b6b0fcb8".to_string());
+        // ###### Block 1 txs: ######
+        // reward_receiver: MDgCMQDeoEeA8OtGME/SRwp+ASKVOnjlEUHYvQfo0FLp3+fwVi/SztDdJskjzCRasGk06UUCAwEAAQ==
+        // MDgCMQCqrJ1yIJ7cDQIdTuS+4CkKn/tQPN7bZFbbGCBhvjQxs71f6Vu+sD9eh8JGpfiZSckCAwEAAQ== -> MDgCMQDZDExOs97sRTnQLYtgFjDKpDzmO7Uo5HPP62u6MDimXBpZtGxtwa8dhJe5NBIsJjUCAwEAAQ== : $100
+        // ##### Block 2 txs: ######
+        // reward_receiver: MDgCMQDeoEeA8OtGME/SRwp+ASKVOnjlEUHYvQfo0FLp3+fwVi/SztDdJskjzCRasGk06UUCAwEAAQ==
+        // MDgCMQCqrJ1yIJ7cDQIdTuS+4CkKn/tQPN7bZFbbGCBhvjQxs71f6Vu+sD9eh8JGpfiZSckCAwEAAQ== -> MDgCMQDZDExOs97sRTnQLYtgFjDKpDzmO7Uo5HPP62u6MDimXBpZtGxtwa8dhJe5NBIsJjUCAwEAAQ== : $100
+        // MDgCMQCqrJ1yIJ7cDQIdTuS+4CkKn/tQPN7bZFbbGCBhvjQxs71f6Vu+sD9eh8JGpfiZSckCAwEAAQ== -> MDgCMQDOpK8YWmcg8ffNF/O7xlBDq/DBdoUnc4yyWrV0y/X3LF+dddjaGksXzGl3tHskpgkCAwEAAQ== : $300
+        // MDgCMQCqrJ1yIJ7cDQIdTuS+4CkKn/tQPN7bZFbbGCBhvjQxs71f6Vu+sD9eh8JGpfiZSckCAwEAAQ== -> MDgCMQDOpK8YWmcg8ffNF/O7xlBDq/DBdoUnc4yyWrV0y/X3LF+dddjaGksXzGl3tHskpgkCAwEAAQ== : $300
+        // MDgCMQCqrJ1yIJ7cDQIdTuS+4CkKn/tQPN7bZFbbGCBhvjQxs71f6Vu+sD9eh8JGpfiZSckCAwEAAQ== -> MDgCMQDZDExOs97sRTnQLYtgFjDKpDzmO7Uo5HPP62u6MDimXBpZtGxtwa8dhJe5NBIsJjUCAwEAAQ== : $100
+
+        // let status = default_btree.get_status();
+        // for (key, value) in &status {
+        //     println!("{}: {}", key, value);
+        // }
+
+        assert!(default_btree.working_block_id == "0000052b06a4d5c725f3713aed93d4b4e1da93a7b4f7cb870ef1f7e6b6b0fcb8".to_string()); // block 8
         assert!(default_btree.finalized_balance_map[&"MDgCMQCqrJ1yIJ7cDQIdTuS+4CkKn/tQPN7bZFbbGCBhvjQxs71f6Vu+sD9eh8JGpfiZSckCAwEAAQ==".to_owned()] == 299791558);
         assert!(default_btree.finalized_balance_map[&"MDgCMQDZDExOs97sRTnQLYtgFjDKpDzmO7Uo5HPP62u6MDimXBpZtGxtwa8dhJe5NBIsJjUCAwEAAQ==".to_owned()] == 300);
         assert!(default_btree.finalized_balance_map[&"MDgCMQDeoEeA8OtGME/SRwp+ASKVOnjlEUHYvQfo0FLp3+fwVi/SztDdJskjzCRasGk06UUCAwEAAQ==".to_owned()] == 20);
-        assert!(default_btree.block_depth[&"00000e3737f396b050fd38ed30e8813818229ffa43ce5f77b3781ace835a8db6".to_owned()] == 7);
-        assert!(default_btree.finalized_block_id == "00000f93bcb625d8181e02c5e952672b3b178ab6cb56c86546b605e8915a1b11");
+        assert!(default_btree.block_depth[&"00000e3737f396b050fd38ed30e8813818229ffa43ce5f77b3781ace835a8db6".to_owned()] == 7); // block 7
+        assert!(default_btree.finalized_block_id == "00000f93bcb625d8181e02c5e952672b3b178ab6cb56c86546b605e8915a1b11"); // block 2
         //println!("default_btree: {:?}", default_btree);
     }
 
@@ -204,7 +219,7 @@ mod tests {
             message: "SEND $100   // By Alice   // 1678198053097".to_string(),
             sig: "LJxQJi3pzVlM/7U/y5BV6kbJ9A3kXAyw2yLmBO3tG0gaEenwjRUbU9FGL7folRYA".to_string()
         };
-        // tx.verify_sig();
+        tx.verify_sig();
     
     }
 
