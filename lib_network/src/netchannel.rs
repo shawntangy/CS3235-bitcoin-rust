@@ -9,11 +9,12 @@
 // You can also look at the unit tests in ./lib.rs to understand the expected behavior of the NetChannelTCP.
 
 
+use std::str::FromStr;
 use std::{io::BufRead};
 use lib_chain::block::{BlockNode, Transaction, BlockId};
 use std::{hash::Hash};
 use serde::{Serialize, Deserialize};
-use std::net::{TcpStream};
+use std::net::{TcpStream, SocketAddr, SocketAddrV4};
 use std::io::{Read, Write};
 use std::io::BufReader;
 
@@ -59,8 +60,25 @@ impl NetChannelTCP {
     /// Return an error string if the connection fails.
     pub fn from_addr(addr: &NetAddress) -> Result<Self,String> {
         // Please fill in the blank
-        todo!();
-        
+        //todo!();
+        let mut ip_addr : String = addr.ip.to_owned();
+        let semi_colon : String = ":".to_owned();
+        let port_no : String = addr.port.to_string().to_owned();
+
+        ip_addr.push_str(&semi_colon);
+        ip_addr.push_str(&port_no); 
+
+        let connection_target : SocketAddr = ip_addr.parse().unwrap();
+
+        let new_stream = TcpStream::connect(connection_target).expect("Couldn't connect to target");
+        let new_buf_reader = BufReader::new(new_stream.try_clone().unwrap());
+
+        let netchanneltcp = NetChannelTCP {
+            stream: new_stream,
+            reader: new_buf_reader,
+        };
+
+        Ok(netchanneltcp)
     }
 
     /// Create a new NetChannelTCP from a TcpStream. 
@@ -85,7 +103,6 @@ impl NetChannelTCP {
     pub fn read_msg(&mut self) -> Option<NetMessage> {
         // Please fill in the blank
         todo!();
-        
     }
 
     /// Write a NetMessage to the TCP stream.
