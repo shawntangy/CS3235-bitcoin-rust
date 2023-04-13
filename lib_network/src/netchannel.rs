@@ -85,16 +85,23 @@ impl NetChannelTCP {
     /// This is useful for creating a NetChannelTCP instance from the listener side.
     pub fn from_stream(stream: TcpStream) -> Self {
         // Please fill in the blank
-        todo!();
-        
+        // todo!();
+        let buf_reader = BufReader::new(stream.try_clone().unwrap());
+        NetChannelTCP {
+            stream: stream,
+            reader: buf_reader,
+        }
     }
 
     /// Clone the NetChannelTCP instance.
     /// This is useful if you have multiple threads dealing with reading and writing to the TCP channel.
     pub fn clone_channel(&mut self) -> Self {
         // Please fill in the blank
-        todo!();
-        
+        // todo!();
+        NetChannelTCP {
+            stream: self.stream.try_clone().unwrap(),
+            reader: BufReader::new(self.stream.try_clone().unwrap())
+        }
     }
 
     /// Read one line of message from the TCP stream.
@@ -102,14 +109,23 @@ impl NetChannelTCP {
     /// Otherwise, parse the line as a NetMessage and return it.
     pub fn read_msg(&mut self) -> Option<NetMessage> {
         // Please fill in the blank
-        todo!();
+        //todo!();
+        let mut line = String::new();
+        let len = self.reader.read_line(&mut line).unwrap();
+        if len.eq(&0) {
+            return None;
+        }
+        return serde_json::from_str(&line).unwrap();
     }
 
     /// Write a NetMessage to the TCP stream.
     /// The message is serialized to a one-line JSON string and a newline is appended in the end.
     pub fn write_msg(&mut self, msg: NetMessage) -> () {
         // Please fill in the blank
-        
+        //todo!();
+        let mut jsonstr: String = serde_json::to_string(&msg).unwrap();
+        jsonstr.push('\n');
+        self.stream.write_all(jsonstr.as_bytes()).unwrap();
     }
 }
 
