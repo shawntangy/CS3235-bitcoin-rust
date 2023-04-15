@@ -18,15 +18,15 @@ use sha2::{Sha256, Digest};
 // A miner that solve puzzles.
 pub struct Miner {
     /// number of threads used to solve the puzzle in parallel
-    thread_count: u16,
+    pub thread_count: u16,
 
     /// number of leading "0"s expected in the resulting hash string in hex format.
     /// e.g. if leading_zero_len is 3, then the hash string should start with "000"
     /// and the difficulty level is 3.
-    leading_zero_len: u16,
+    pub leading_zero_len: u16,
 
     /// whether the miner is running or not
-    is_running: bool
+    pub is_running: bool
 }
 
 type BlockId = String;
