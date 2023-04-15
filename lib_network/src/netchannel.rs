@@ -61,24 +61,13 @@ impl NetChannelTCP {
     pub fn from_addr(addr: &NetAddress) -> Result<Self,String> {
         // Please fill in the blank
         //todo!();
-        let mut ip_addr : String = addr.ip.to_owned();
-        let semi_colon : String = ":".to_owned();
-        let port_no : String = addr.port.to_string().to_owned();
-
-        ip_addr.push_str(&semi_colon);
-        ip_addr.push_str(&port_no); 
-        println!("[NetChannel] Trying to connect to {:?}", ip_addr.clone());
-        let connection_target : SocketAddr = ip_addr.parse().unwrap();
-
-        let new_stream = TcpStream::connect(connection_target).expect("Couldn't connect to target");
-        let new_buf_reader = BufReader::new(new_stream.try_clone().unwrap());
-
-        let netchanneltcp = NetChannelTCP {
-            stream: new_stream,
-            reader: new_buf_reader,
-        };
-
-        Ok(netchanneltcp)
+        match TcpStream::connect(format!("{}:{}", addr.ip, addr.port)) {
+            Ok(stream) => {
+                let reader = BufReader::new(stream.try_clone().unwrap());
+                Ok(Self { stream, reader })
+            },
+            Err(e) => Err(e.to_string())
+        }
     }
 
     /// Create a new NetChannelTCP from a TcpStream. 
@@ -111,11 +100,16 @@ impl NetChannelTCP {
         // Please fill in the blank
         //todo!();
         let mut line = String::new();
-        let len = self.reader.read_line(&mut line).unwrap();
-        if len.eq(&0) {
-            return None;
+        match self.reader.read_line(&mut line) {
+            Ok(0) => None,
+            Ok(_) => {
+                match serde_json::from_str::<NetMessage>(&line) {
+                    Ok(msg) => Some(msg),
+                    Err(_) => Some(NetMessage::Unknown(line)),
+                }
+            },
+            Err(_) => None,
         }
-        return serde_json::from_str(&line).unwrap();
     }
 
     /// Write a NetMessage to the TCP stream.

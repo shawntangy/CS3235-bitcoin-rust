@@ -9,12 +9,12 @@
 // You can also look at the unit tests in ./lib.rs to understand the expected behavior of the P2PNetwork.
 
 
-use lib_chain::block::{BlockNode, Transaction, BlockId, TxId};
+use lib_chain::block::{BlockNode, Transaction, BlockId, TxId, self};
 use crate::netchannel::*;
 use std::collections::{HashMap, BTreeMap, HashSet};
 use std::convert;
 use std::io::{Write, Read};
-use std::net::TcpListener;
+use std::net::{TcpListener, TcpStream};
 use std::sync::mpsc::{Receiver, Sender};
 use std::thread;
 use std::sync::{mpsc, Arc, Mutex};
@@ -29,6 +29,8 @@ pub struct P2PNetwork {
     pub address: NetAddress,
     /// The addresses of the neighbors.
     pub neighbors: Vec<NetAddress>,
+    /// Vec of TcpStream
+    pub tcps: Vec<NetChannelTCP>,
 }
 
 
@@ -63,16 +65,15 @@ impl P2PNetwork {
         // 6. create threads to listen to messages from neighbors
         // 7. create threads to distribute received messages (send to channels or broadcast to neighbors)
         // 8. return the created P2PNetwork instance and the mpsc channels
-        todo!();
+        // todo!();
 
-        /* Yi Da's poor man attemp 
         let mut ip_addr : String = address.ip.to_owned();
         let semi_colon : String = ":".to_owned();
         let port_no : String = address.port.to_string().to_owned();
         ip_addr.push_str(&semi_colon);
         ip_addr.push_str(&port_no);
         // 1. create a P2PNetwork instance
-        let p2pnetwork = P2PNetwork { send_msg_count: 0, recv_msg_count: 0, address, neighbors: neighbors.clone() };
+        let p2pnetwork = Arc::new(Mutex::new(P2PNetwork { send_msg_count: 0, recv_msg_count: 0, address, neighbors: neighbors.clone(), tcps: vec![] }));
         // 2. create mpsc channels for sending and receiving messages
         let (upd_block_in_tx, upd_block_in_rx) = mpsc::channel::<BlockNode>();
         let (upd_trans_in_tx, upd_trans_in_rx) = mpsc::channel::<Transaction>();
@@ -80,69 +81,95 @@ impl P2PNetwork {
         let (trans_out_tx, trans_out_rx) = mpsc::channel::<Transaction>();
         let (id_tx, id_rx) = mpsc::channel::<BlockId>();
 
-        // 4. create TCP connections to all neighbors
-        let mut tcps = vec![];
-        let mut tcps_2 = vec![];
-        for neighbor_netaddress in neighbors {
-            let tcp = NetChannelTCP::from_addr(&neighbor_netaddress).unwrap();
-            tcps.push(tcp.clone_channel());
-            tcps_2.push(tcp.clone_channel());
-        }
-        
-
         // 3. create a thread for accepting incoming TCP connections from neighbors
-        // let listener = TcpListener::bind(ip_addr.clone()).unwrap();     
-        // thread::spawn(move || {
-        //     for stream in listener.incoming() {
-        //         let tcp = NetChannelTCP::from_stream(stream.unwrap());
-        //         tcps.push(tcp);
-        //     }
-        // });
-
-        // 6. create threads to listen to messages from neighbors
-        // part of 6: listen from TCP channel
-        /*
-        let stream_copy = stream.unwrap().try_clone().unwrap();
-        let mut net_channel_tcp = NetChannelTCP::from_stream(stream_copy);
+        let listener = TcpListener::bind(ip_addr.clone()).unwrap();     
+        let p2pnetwork_clone = p2pnetwork.clone();
+        let block_out_tx_clone = block_out_tx.clone();
+        let trans_out_tx_clone = trans_out_tx.clone();
         thread::spawn(move || {
-            loop {
-                let message = net_channel_tcp.read_msg().unwrap();
+            for stream in listener.incoming() {
+                let mut tcp = NetChannelTCP::from_stream(stream.unwrap());
+                p2pnetwork_clone.lock().unwrap().tcps.push(tcp.clone_channel());
+                let block_out_tx_clone2 = block_out_tx_clone.clone();
+                let trans_out_tx_clone2 = trans_out_tx_clone.clone();
+                // part of 6: listen from TCP channel of new neighbors
+                thread::spawn(move || {
+                    loop {
+                        let message = tcp.read_msg().unwrap();
+                        match message {
+                            NetMessage::BroadcastBlock(block) => {
+                                block_out_tx_clone2.send(block);
+                            }
+                            NetMessage::BroadcastTx(trans) => {
+                                trans_out_tx_clone2.send(trans);
+                            }
+                            NetMessage::RequestBlock(_) => todo!(),
+                            NetMessage::Unknown(_) => todo!(),
+                        };
+                    }
+                });
             }
         });
-        */
+
+        // 4. create TCP connections to all neighbors
+        for neighbor_netaddress in neighbors {
+            // part of 6: listen from TCP channel of initial neighbors
+            let p2pnetwork_clone2 = p2pnetwork.clone();
+            let block_out_tx_clone = block_out_tx.clone();
+            let trans_out_tx_clone = trans_out_tx.clone();
+            thread::spawn(move || {
+                let mut tcp = NetChannelTCP::from_addr(&neighbor_netaddress).unwrap();
+                p2pnetwork_clone2.lock().unwrap().tcps.push(tcp.clone_channel());
+                loop {
+                    let message = tcp.read_msg().unwrap();
+                    // part of 7: broadcast message to all neighbors by sending to mpsc which will in turn send to neighbor
+                    match message {
+                        NetMessage::BroadcastBlock(block) => {
+                            block_out_tx_clone.send(block);
+                        }
+                        NetMessage::BroadcastTx(trans) => {
+                            trans_out_tx_clone.send(trans);
+                        }
+                        NetMessage::RequestBlock(_) => todo!(),
+                        NetMessage::Unknown(_) => todo!(),
+                    };
+                }
+            });
+        }
 
         // part of 6: listen from blocknode channel and broadcast received blocknode
+        let p2pnetwork_clone3 = p2pnetwork.clone();
         thread::spawn(move || {
-            loop {
-                for block in &block_out_rx {
-                    // broadcast block to all neighbors 
-                    for mut tcp in tcps {
-                        let msg = NetMessage::BroadcastBlock(block.clone());
-                        tcp.write_msg(msg);
-                    }
+            for block in &block_out_rx {
+                // part of 7: broadcast block to all neighbors
+                let mut p2pnetwork_temp = p2pnetwork_clone3.lock().unwrap(); // acquire the lock on the Arc<Mutex<P2PNetwork>> to access its fields
+                for tcp in p2pnetwork_temp.tcps.iter_mut() { // iterate through the `tcps` Vec
+                    tcp.write_msg(NetMessage::BroadcastBlock(block.clone()));
                 }
             }
+    
         });
-        let listener = TcpListener::bind(ip_addr).unwrap();
+        
         // part of 6: listen from transaction channel and broadcast received transaction
+        let p2pnetwork_clone4 = p2pnetwork.clone();
         thread::spawn(move || {
-            loop {
-                for trans in &trans_out_rx {
-                    // broadcast trans to all neighbors
-                    let mut jsonstr: String = serde_json::to_string(&trans).unwrap();
-                    jsonstr.push('\n');
-                    for stream in listener.incoming() {
-                        stream.unwrap().write_all(jsonstr.clone().as_bytes());
-                    }
+            for trans in &trans_out_rx {
+                // part of 7: broadcast trans to all neighbors
+                let mut p2pnetwork_temp = p2pnetwork_clone4.lock().unwrap(); // acquire the lock on the Arc<Mutex<P2PNetwork>> to access its fields
+                for tcp in p2pnetwork_temp.tcps.iter_mut() { // iterate through the `tcps` Vec
+                    tcp.write_msg(NetMessage::BroadcastTx(trans.clone()));
                 }
             }
         });
-            
+
+
+        // 6. create threads to listen to messages from neighbors
         // 5. create threads for each TCP connection to send messages
         // 7. create threads to distribute received messages (send to channels or broadcast to neighbors)
+
         // 8. return the created P2PNetwork instance and the mpsc channels
-        (Arc::new(Mutex::new(p2pnetwork)), upd_block_in_rx, upd_trans_in_rx, block_out_tx, trans_out_tx, id_tx)
-        */
+        (p2pnetwork, upd_block_in_rx, upd_trans_in_rx, block_out_tx, trans_out_tx, id_tx)
+    
     } 
 
     /// Get status information of the P2PNetwork for debug printing.
