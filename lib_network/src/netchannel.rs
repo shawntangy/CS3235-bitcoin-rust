@@ -67,7 +67,7 @@ impl NetChannelTCP {
 
         ip_addr.push_str(&semi_colon);
         ip_addr.push_str(&port_no); 
-
+        println!("[NetChannel] Trying to connect to {:?}", ip_addr.clone());
         let connection_target : SocketAddr = ip_addr.parse().unwrap();
 
         let new_stream = TcpStream::connect(connection_target).expect("Couldn't connect to target");
