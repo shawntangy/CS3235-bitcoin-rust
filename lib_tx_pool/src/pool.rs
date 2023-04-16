@@ -124,6 +124,8 @@ impl TxPool {
             for tx in &block.transactions_block.transactions {
                 self.del_tx(tx.gen_hash());
             }
+            // Update last_finalized_block_id
+            self.last_finalized_block_id = block.header.block_id.clone();
         }
         // yet to test this function
     }
