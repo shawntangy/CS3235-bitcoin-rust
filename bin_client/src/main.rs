@@ -125,11 +125,22 @@ fn main() {
     //                         The bot commands should be executed in a separate thread so that the UI thread can still be responsive.
     // Please fill in the blank
     // - Create bin_nakamoto process:  Command::new("./target/debug/bin_nakamoto")...
+    let mut bin_nakamoto = Command::new("./target/debug/bin_nakamoto");
     // - Create bin_wallet process:  Command::new("./target/debug/bin_wallet")...
+    let mut bin_wallet = Command::new("./target/debug/bin_wallet");
     // - Get stdin and stdout of those processes
+    let bin_nakamoto_stdin = bin_nakamoto.stdin(Stdio::null()).take().expect("Failed bin_nakamoto_stdin");
+    let bin_nakamoto_stdout = bin_nakamoto.stdout(Stdio::null()).take().expect("Failed bin_nakamoto_stout");
+
+    let bin_wallet_stdin = bin_wallet.stdin.take().expect("Failed bin_wallet_stdin");
+    let bin_wallet_stdout = bin_wallet.stdout.take().expect("Failed bin_wallet_stdout");
+
     // - Create buffer readers if necessary
+    let mut bin_nakamoto_buf_reader = BufReader::new(bin_nakamoto_stdout);
+    let mut bin_client_buf_reader = BufReader::new(bin_wallet_stdout);
+
     // - Send initialization requests to bin_nakamoto and bin_wallet
-    
+    // send in the enum?    
 
 
     let client_seccomp_path = std::env::args().nth(1).expect("Please specify client seccomp path");
@@ -137,12 +148,14 @@ fn main() {
     // sandboxing the bin_client (For part B). Leave it blank for part A.
     
 
-
-
+    let wallet = serde_json::from_str(&read_string_from_file(wallet_config_path)).unwrap();
     let user_name: String;
     let user_id: String;
     // Please fill in the blank
+    let user_name = wallet.get_user_id();
+    let user_id = wallet.get_user_name();
     // Read the user info from wallet
+    // this part should just be the 2 functions above
     
 
 
