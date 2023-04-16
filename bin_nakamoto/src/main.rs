@@ -110,63 +110,81 @@ fn main() {
     // Eventually, the program will quit when receiving a Quit IPC call.
     // Please fill in the blank
     // Loop over stdin and handle IPC messages
-    let mut nakamoto: Nakamoto;
-    loop {
-        let mut stdin_input = String::new();  
-        io::stdin().read_line(&mut stdin_input).unwrap();
-        let ipc_msg_req : IPCMessageReq = serde_json::from_str(&stdin_input).unwrap();
-        let ipc_msg_resp = match ipc_msg_req {
-            IPCMessageReq::Initialize(blocktree_json, tx_pool_json, config_json) => {
-                let nakamoto = Nakamoto::create_nakamoto(blocktree_json, tx_pool_json, config_json);
-                IPCMessageResp::Initialized
+    
+    let mut stdin_input = String::new();  
+    io::stdin().read_line(&mut stdin_input).unwrap();
+    let ipc_msg_req : IPCMessageReq = serde_json::from_str(&stdin_input).unwrap();
+    match ipc_msg_req {
+        IPCMessageReq::Initialize(blocktree_json, tx_pool_json, config_json) => {
+            // do something with the three strings
+            let mut nakamoto = Nakamoto::create_nakamoto(blocktree_json, tx_pool_json, config_json);
+            //craft into string
+            let resp_str = serde_json::to_string(&IPCMessageResp::Initialized).unwrap();
+            println!("{}", resp_str);
+            loop {
+                let mut stdin_input = String::new();  
+                io::stdin().read_line(&mut stdin_input).unwrap();
+                let ipc_msg_req : IPCMessageReq = serde_json::from_str(&stdin_input).unwrap();
+                let ipc_msg_resp = match ipc_msg_req {
+                    IPCMessageReq::Initialize(blocktree_json, tx_pool_json, config_json) => {
+                        println!("nakamoto already initialized but will re-initalized again here!");
+                        let nakamoto = Nakamoto::create_nakamoto(blocktree_json, tx_pool_json, config_json);
+                        IPCMessageResp::Initialized
+                    }
+                    IPCMessageReq::GetAddressBalance(user_id) => {
+                        let balance = nakamoto.chain_p.lock().unwrap().finalized_balance_map.get(&user_id).unwrap().clone();
+                        IPCMessageResp::AddressBalance(user_id, balance)
+                    }
+                    IPCMessageReq::PublishTx(data_string, signature) => {
+                        // what is signature used for?
+                        let tx : Transaction = serde_json::from_str(&data_string).unwrap();
+                        nakamoto.publish_tx(tx);
+                        IPCMessageResp::PublishTxDone
+                    }
+                    IPCMessageReq::RequestBlock(block_id) => {
+                        // is this correct?
+                        let block = nakamoto.chain_p.lock().unwrap().get_block(block_id);
+                        let block_data = serde_json::to_string(&block).unwrap();
+                        IPCMessageResp::BlockData(block_data)
+                    }
+                    IPCMessageReq::RequestNetStatus => {
+                        let status = nakamoto.get_network_status();
+                        IPCMessageResp::NetStatus(status)
+                    }
+                    IPCMessageReq::RequestChainStatus => {
+                        let status = nakamoto.get_chain_status();
+                        IPCMessageResp::ChainStatus(status)
+                    }
+                    IPCMessageReq::RequestMinerStatus => {
+                        let status = nakamoto.get_miner_status();
+                        IPCMessageResp::MinerStatus(status)
+                    }
+                    IPCMessageReq::RequestTxPoolStatus => {
+                        let status = nakamoto.get_txpool_status();
+                        IPCMessageResp::TxPoolStatus(status)
+                    }
+                    IPCMessageReq::RequestStateSerialization => {
+                        let serialized_chain = nakamoto.get_serialized_chain();
+                        let serialized_txpool = nakamoto.get_serialized_txpool();
+                        IPCMessageResp::StateSerialization(serialized_chain, serialized_txpool)
+                    }
+                    IPCMessageReq::Quit => {
+                        break;
+                    }
+                };
+                //craft into string
+                let resp_str = serde_json::to_string(&ipc_msg_resp).unwrap();
+                println!("{}", resp_str);
             }
-            IPCMessageReq::GetAddressBalance(user_id) => {
-                // handle GetAddressBalance variant
-            }
-            IPCMessageReq::PublishTx(data_string, signature) => {
-                // what is signature used for?
-                let tx : Transaction = serde_json::from_str(&data_string).unwrap();
-                nakamoto.publish_tx(tx);
-                IPCMessageResp::PublishTxDone
-            }
-            IPCMessageReq::RequestBlock(block_id) => {
-                // is this correct?
-                let block = nakamoto.chain_p.lock().unwrap().get_block(block_id);
-                let block_data = serde_json::to_string(&block).unwrap();
-                IPCMessageResp::BlockData(block_data)
-            }
-            IPCMessageReq::RequestNetStatus => {
-                let status = nakamoto.get_network_status();
-                IPCMessageResp::NetStatus(status)
-            }
-            IPCMessageReq::RequestChainStatus => {
-                let status = nakamoto.get_chain_status();
-                IPCMessageResp::ChainStatus(status)
-            }
-            IPCMessageReq::RequestMinerStatus => {
-                let status = nakamoto.get_miner_status();
-                IPCMessageResp::MinerStatus(status)
-            }
-            IPCMessageReq::RequestTxPoolStatus => {
-                let status = nakamoto.get_txpool_status();
-                IPCMessageResp::TxPoolStatus(status)
-            }
-            IPCMessageReq::RequestStateSerialization => {
-                let serialized_chain = nakamoto.get_serialized_chain();
-                let serialized_txpool = nakamoto.get_serialized_txpool();
-                IPCMessageResp::StateSerialization(serialized_chain, serialized_txpool)
-            }
-            IPCMessageReq::Quit => {
-                break;
-            }
-        };
-        //craft into string
-        let resp_str = serde_json::to_string(&ipc_msg_resp).unwrap();
-        println!("{}", resp_str);
+            //craft into string
+            let resp_str = serde_json::to_string(&IPCMessageResp::Quitting).unwrap();
+            println!("{}", resp_str);
+        }
+        _ => {
+            println!("1st call must be initialize!");
+        }
     }
-    //craft into string
-    let resp_str = serde_json::to_string(&IPCMessageResp::Quitting).unwrap();
-    println!("{}", resp_str);
+
 }
 
 
