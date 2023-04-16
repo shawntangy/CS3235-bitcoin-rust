@@ -150,6 +150,7 @@ impl Nakamoto {
         // Start necessary thread(s) to control the miner.
         thread::spawn(move || {
             // do smth with the miner?
+            todo!();
         });
         // Return the Nakamoto instance that holds pointers to the chain, the miner, the network and the tx pool.
         Nakamoto { chain_p: Arc::new(Mutex::new(chain)), miner_p: Arc::new(Mutex::new(miner)), network_p: network, tx_pool_p: Arc::new(Mutex::new(tx_pool)), trans_tx: trans_out_tx }
