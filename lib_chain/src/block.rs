@@ -371,6 +371,7 @@ impl BlockTree {
 
         // When a block is successfully added to the block tree, update the related fields in the BlockTree struct
         // (e.g., working_block_id, finalized_block_id, finalized_balance_map, finalized_tx_ids, block_depth, children_map, all_blocks, etc)
+
         self.all_blocks.insert(block.header.block_id.clone(), block.to_owned());
         if (!self.children_map.contains_key(&block.header.parent)) {
             self.children_map.insert(block.header.parent.clone(), vec![]); // create entry for parent block with no child in children_map if no entry exists
@@ -378,7 +379,17 @@ impl BlockTree {
         self.children_map.get_mut(&block.header.parent.clone()).unwrap().push(block.header.block_id.clone()); // add curr block as a children to its parent block
         let depth = self.block_depth[&block.header.parent] + 1;
         self.block_depth.insert(block.header.block_id.clone(), depth);
-        self.working_block_id = block.header.block_id.clone();
+        // update working_block_id to last block in longest chain
+        // If two paths have the same length, here we consider the one whose last block has the larger hash number as the longest path.
+        for (block_id, depth) in &self.block_depth {
+            if depth > self.block_depth.get(&self.working_block_id).unwrap() {
+                self.working_block_id = block_id.clone();
+            }
+            else if depth == self.block_depth.get(&self.working_block_id).unwrap() && block_id > &self.working_block_id {
+                self.working_block_id = block_id.clone();
+            }
+        }
+
         if pending_finalization_blocks.len().eq(&7) &&  pending_finalization_blocks[0].header.block_id.ne(&self.root_id){ // there is 7 blocks pending finalization, thus the oldest one can be finalized. however, if the oldest one is the genesis block which is already finalized, ignore.
             self.finalized_block_id = pending_finalization_blocks[0].header.block_id.clone(); // update finalized_block_id
             // carry out the txs in newly finalized block
@@ -510,15 +521,12 @@ impl BlockTree {
         // For debugging purpose, you can return any dictionary of strings as the status of the BlockTree.
         // It should be displayed in the Client UI eventually.
         let mut status_map = BTreeMap::new();
-        status_map.insert("root_id".to_string(), format!("{:?}", self.root_id));
-        status_map.insert("working_block_id".to_string(), format!("{:?}", self.working_block_id));
-        status_map.insert("finalized_block_id".to_string(), format!("{:?}", self.finalized_block_id));
-        let all_blocks_count = self.all_blocks.len();
-        let orphans_count = self.orphans.len();
-        let finalized_tx_ids_count = self.finalized_tx_ids.len();
-        status_map.insert("all_blocks_count".to_string(), all_blocks_count.to_string());
-        status_map.insert("orphans_count".to_string(), orphans_count.to_string());
-        status_map.insert("finalized_tx_ids_count".to_string(), finalized_tx_ids_count.to_string());
+        status_map.insert("#blocks".to_string(), self.all_blocks.len().to_string());
+        status_map.insert("#orphans".to_string(), self.orphans.len().to_string());
+        status_map.insert("finalized_id".to_string(), self.finalized_block_id.to_string());
+        status_map.insert("root_id".to_string(), self.root_id.to_string());
+        status_map.insert("working_depth".to_string(), self.block_depth.get(&self.working_block_id).unwrap().to_string());
+        status_map.insert("working_id".to_string(), self.working_block_id.to_string());
         status_map
     }
 }

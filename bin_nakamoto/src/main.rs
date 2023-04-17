@@ -137,7 +137,13 @@ fn main() {
                     }
                     IPCMessageReq::PublishTx(data_string, signature) => {
                         // what is signature used for?
-                        let tx : Transaction = serde_json::from_str(&data_string).unwrap();
+                        let data: Vec<String> = serde_json::from_str(&data_string).unwrap();
+                        let tx = Transaction {
+                            sender : data[0].to_owned(),
+                            receiver : data[1].to_owned(),
+                            message : data[2].to_owned(),
+                            sig : signature,
+                        };
                         nakamoto.publish_tx(tx);
                         IPCMessageResp::PublishTxDone
                     }

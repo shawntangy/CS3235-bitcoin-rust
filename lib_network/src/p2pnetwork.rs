@@ -177,7 +177,11 @@ impl P2PNetwork {
         // Please fill in the blank
         // For debugging purpose, you can return any dictionary of strings as the status of the network. 
         // It should be displayed in the Client UI eventually.
-        todo!();
+        let mut status_map = BTreeMap::new();
+        status_map.insert("#address".to_string(), format!("ip: {} port: {}", self.address.ip, self.address.port));
+        status_map.insert("#recv_msg".to_string(), self.recv_msg_count.to_string());
+        status_map.insert("send_msg".to_string(), self.send_msg_count.to_string());
+        status_map
         
     }
 
