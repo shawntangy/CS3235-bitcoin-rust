@@ -151,8 +151,8 @@ impl Nakamoto {
         let chain_p_clone2 = chain_p.clone();
         let cancellation_token_p = Arc::new(RwLock::new(false));
         let cancellation_token_p_clone2 = cancellation_token_p.clone();
-
         thread::spawn(move || {
+            Self::stdout_notify("# Waiting for IPC Requests ...".to_owned());
             let mut cancellation_token_writer = cancellation_token_p_clone2.write().unwrap();
             for block in upd_block_in_rx {
                 // it would first check if it is valid including checking whether the block has enough prefix 0 for SHA256(nonce || puzzle)
@@ -161,10 +161,11 @@ impl Nakamoto {
                 if (!is_valid) {
                     continue;
                 }
-                // If valid, it would add it to the blocktree, and check the current longest path
+                // If valid, it would add it to the blocktree and broadcast and check the current longest path
                 // If two paths have the same length, here we consider the one whose last block has the larger hash number as the longest path.
                 let prev_working_id = chain_p_clone2.lock().unwrap().working_block_id.clone();
-                chain_p_clone2.lock().unwrap().add_block(block, config.difficulty_leading_zero_len_acc);
+                chain_p_clone2.lock().unwrap().add_block(block.clone(), config.difficulty_leading_zero_len_acc);
+                block_out_tx_clone.send(block).unwrap();
                 // If the longest path and the last block on this path do not change, it continues its mining
                 // If not, it switches to the new longest path, creates a puzzle, and starts solving it by calling cancellation token
                 if chain_p_clone2.lock().unwrap().working_block_id.ne(&prev_working_id) {
@@ -172,10 +173,14 @@ impl Nakamoto {
                 }
             }
         });
-        // listen to incoming trrans
+        // listen to incoming trans
         let trans_out_tx_clone = trans_out_tx.clone();
+        let tx_pool_p_clone2 = tx_pool_p.clone();
         thread::spawn(move || {
+            Self::stdout_notify("[Main] Start receiving trans thread".to_owned());
             for trans in upd_trans_in_rx {
+                // if tx added successfully, 
+                tx_pool_p_clone2.lock().unwrap().add_tx(trans.clone());
                 trans_out_tx_clone.send(trans).unwrap();
             }
         });
