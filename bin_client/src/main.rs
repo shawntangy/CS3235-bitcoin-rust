@@ -20,7 +20,7 @@ use crossterm::{
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
 
-use std::fs::File;
+use std::fs::{File, read};
 use std::io::{self, Read, Write, BufReader, BufRead};
 use std::process::{Command, Stdio};
 use std::collections::BTreeMap;
@@ -31,7 +31,7 @@ use std::sync::{Mutex, Arc};
 use serde::{Serialize, Deserialize};
 use serde_json;
 
-use std::fs;
+use std::{fs, env};
 
 mod app;
 
@@ -125,38 +125,88 @@ fn main() {
     //                         The bot commands should be executed in a separate thread so that the UI thread can still be responsive.
     // Please fill in the blank
     // - Create bin_nakamoto process:  Command::new("./target/debug/bin_nakamoto")...
-    let mut bin_nakamoto = Command::new("./target/debug/bin_nakamoto");
+    let mut bin_nakamoto = Command::new("./target/debug/bin_nakamoto").stdin(Stdio::piped()).stdout(Stdio::piped()).spawn().unwrap();
     // - Create bin_wallet process:  Command::new("./target/debug/bin_wallet")...
-    let mut bin_wallet = Command::new("./target/debug/bin_wallet");
+    let mut bin_wallet = Command::new("./target/debug/bin_wallet").stdin(Stdio::piped()).stdout(Stdio::piped()).spawn().unwrap();
     // - Get stdin and stdout of those processes
-    let bin_nakamoto_stdin = bin_nakamoto.stdin(Stdio::null()).take().expect("Failed bin_nakamoto_stdin");
-    let bin_nakamoto_stdout = bin_nakamoto.stdout(Stdio::null()).take().expect("Failed bin_nakamoto_stout");
+    let bin_nakamoto_stdin = bin_nakamoto.stdin.take().unwrap();
+    let bin_nakamoto_stdout = bin_nakamoto.stdout.take().unwrap();
 
-    let bin_wallet_stdin = bin_wallet.stdin.take().expect("Failed bin_wallet_stdin");
-    let bin_wallet_stdout = bin_wallet.stdout.take().expect("Failed bin_wallet_stdout");
+    let bin_wallet_stdin = bin_wallet.stdin.take().unwrap();
+    let bin_wallet_stdout = bin_wallet.stdout.take().unwrap();
 
     // - Create buffer readers if necessary
     let mut bin_nakamoto_buf_reader = BufReader::new(bin_nakamoto_stdout);
-    let mut bin_client_buf_reader = BufReader::new(bin_wallet_stdout);
+    let mut bin_wallet_buf_reader = BufReader::new(bin_wallet_stdout);
 
     // - Send initialization requests to bin_nakamoto and bin_wallet
-    // send in the enum?    
+    // send in the enum?
+    let nakamoto_config_path = std::env::args().nth(2).expect("PLease specify nakamoto config path");
+    
+    let blocktree_path = nakamoto_config_path.clone();
+    blocktree_path.push_str("/BlockTree.json");
+    let blocktree_json = read_string_from_file(&blocktree_path);
+    
+    let tx_pool_path = nakamoto_config_path.clone();
+    tx_pool_path.push_str("/TxPool.json");
+    let tx_pool_json = read_string_from_file(&tx_pool_path);
 
+    let config_path = nakamoto_config_path.clone();
+    config_path.push_str("/Config.json");
+    let config_json = read_string_from_file(&config_path);
+
+    let nakamoto_init_req = IPCMessageReqNakamoto::Initialize(serde_json::to_string(&(blocktree_json, tx_pool_json, config_json)));
+    let mut nakamoto_init_req_str = serde_json::to_string(&nakamoto_init_req).unwrap();
+    nakamoto_init_req_str.push('\n');
+    //Shift to threads (?)
+    bin_nakamoto_stdin.write_all(nakamoto_init_req_str.as_bytes()).unwrap();
+
+    let wallet_config_path = std::env::args().nth(4).expect("Please specify wallet config path");
+    let wallet_json = read_string_from_file(&wallet_config_path);
+    let wallet_init_req = IPCMessageReqWallet::Initialize(serde_json::to_string(&wallet_json).unwrap());
+    let mut wallet_init_req_str = serde_json::to_string(&wallet_init_req).unwrap();
+    wallet_init_req_str.push('\n');
+    // Shift to threads (?)
+    bin_wallet_stdin.write_all(wallet_init_req_str.as_bytes()).unwrap();
 
     let client_seccomp_path = std::env::args().nth(1).expect("Please specify client seccomp path");
     // Please fill in the blank
     // sandboxing the bin_client (For part B). Leave it blank for part A.
     
 
-    let wallet = serde_json::from_str(&read_string_from_file(wallet_config_path)).unwrap();
-    let user_name: String;
-    let user_id: String;
     // Please fill in the blank
-    let user_name = wallet.get_user_id();
-    let user_id = wallet.get_user_name();
     // Read the user info from wallet
     // this part should just be the 2 functions above
-    
+    let mut user_name: String;
+    let mut user_id: String;
+    //let user_name = wallet.get_user_id();
+    //let user_id = wallet.get_user_name();
+    let user_info_req = IPCMessageReqWallet::GetUserInfo;
+    let mut user_info_req_str = serde_json::to_string(&user_info_req).unwrap();
+    user_info_req_str.push('\n');
+    // Shift to threads (?)
+    bin_wallet_stdin.write_all(user_info_req_str.as_bytes()).unwrap();
+    let mut resp = String::new();
+    bin_wallet_buf_reader.read_line(&mut resp).unwrap();
+    let ipc_msg_resp : IPCMessageRespWallet = serde_json::from_str(&resp).unwrap();
+    match ipc_msg_resp {
+        IPCMessageRespWallet::UserInfo(username, uid) => {
+            user_name = username;
+            user_id = uid;
+        }
+
+        IPCMessageRespWallet::Initialized() => {
+        }
+
+        IPCMessageRespWallet::Quitting() => {
+        }
+
+        IPCMessageRespWallet::SignResponse(DataString, Signature)=> {
+        }
+
+        IPCMessageRespWallet::VerifyResponse(isSuccess, DataString) => {
+        }
+    }
 
 
     // Create the Terminal UI app
