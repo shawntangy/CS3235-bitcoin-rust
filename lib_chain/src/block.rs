@@ -64,6 +64,11 @@ impl MerkleTree {
         // Please fill in the blank
         let mut merkle_tree_hashes: Vec<Vec<String>> = vec![vec![]]; // create a 2D vector representing merkle tree
         merkle_tree_hashes[0] = Self::get_tx_hash(txs); // add hashes of all txs into 1st layer of merkle tree
+        // if there is only one block, please also duplicate it so that the Merkle tree has two levels.
+        if (merkle_tree_hashes[0].len() == 1) {
+            let hash_copy = merkle_tree_hashes[0][0].clone();
+            merkle_tree_hashes[0].push(hash_copy);
+        }
 
         // Get remaining lists of hashes of previous list
         while merkle_tree_hashes.last().unwrap().len() != 1 {
@@ -504,17 +509,17 @@ impl BlockTree {
         // Please fill in the blank
         // For debugging purpose, you can return any dictionary of strings as the status of the BlockTree.
         // It should be displayed in the Client UI eventually.
-        let mut status = BTreeMap::new();
-        status.insert("all_blocks".to_string(), serde_json::to_string(&self.all_blocks).unwrap());
-        status.insert("children_map".to_string(), serde_json::to_string(&self.children_map).unwrap());
-        status.insert("block_depth".to_string(), serde_json::to_string(&self.block_depth).unwrap());
-        status.insert("root_id".to_string(), self.root_id.clone());
-        status.insert("working_block_id".to_string(), self.working_block_id.clone());
-        status.insert("orphans".to_string(), serde_json::to_string(&self.orphans).unwrap());
-        status.insert("finalized_block_id".to_string(), self.finalized_block_id.clone());
-        status.insert("finalized_balance_map".to_string(), serde_json::to_string(&self.finalized_balance_map).unwrap());
-        status.insert("finalized_tx_ids".to_string(), serde_json::to_string(&self.finalized_tx_ids).unwrap());
-        return status;
+        let mut status_map = BTreeMap::new();
+        status_map.insert("root_id".to_string(), format!("{:?}", self.root_id));
+        status_map.insert("working_block_id".to_string(), format!("{:?}", self.working_block_id));
+        status_map.insert("finalized_block_id".to_string(), format!("{:?}", self.finalized_block_id));
+        let all_blocks_count = self.all_blocks.len();
+        let orphans_count = self.orphans.len();
+        let finalized_tx_ids_count = self.finalized_tx_ids.len();
+        status_map.insert("all_blocks_count".to_string(), all_blocks_count.to_string());
+        status_map.insert("orphans_count".to_string(), orphans_count.to_string());
+        status_map.insert("finalized_tx_ids_count".to_string(), finalized_tx_ids_count.to_string());
+        status_map
     }
 }
 

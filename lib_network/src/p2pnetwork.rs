@@ -98,10 +98,10 @@ impl P2PNetwork {
                         let message = tcp.read_msg().unwrap();
                         match message {
                             NetMessage::BroadcastBlock(block) => {
-                                block_out_tx_clone2.send(block);
+                                block_out_tx_clone2.send(block).unwrap();
                             }
                             NetMessage::BroadcastTx(trans) => {
-                                trans_out_tx_clone2.send(trans);
+                                trans_out_tx_clone2.send(trans).unwrap();
                             }
                             NetMessage::RequestBlock(_) => todo!(),
                             NetMessage::Unknown(_) => todo!(),
@@ -125,10 +125,10 @@ impl P2PNetwork {
                     // part of 7: broadcast message to all neighbors by sending to mpsc which will in turn send to neighbor
                     match message {
                         NetMessage::BroadcastBlock(block) => {
-                            block_out_tx_clone.send(block);
+                            block_out_tx_clone.send(block).unwrap();
                         }
                         NetMessage::BroadcastTx(trans) => {
-                            trans_out_tx_clone.send(trans);
+                            trans_out_tx_clone.send(trans).unwrap();
                         }
                         NetMessage::RequestBlock(_) => todo!(),
                         NetMessage::Unknown(_) => todo!(),

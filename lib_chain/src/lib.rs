@@ -81,6 +81,76 @@ mod tests {
         // 3c1ad8fb380a0808e5c0c0a864040d74338de2aa3a9f5aa2657371b4f5a68ae6
     }
 
+    /// Test the generation of merkle tree that only has 1 transaction.
+    #[test]
+    fn test_merkle_tree_with_one_trans() { 
+        let tx = Transaction { 
+            sender: "MDgCMQCqrJ1yIJ7cDQIdTuS+4CkKn/tQPN7bZFbbGCBhvjQxs71f6Vu+sD9eh8JGpfiZSckCAwEAAQ==".to_string(),
+            receiver: "MDgCMQDZDExOs97sRTnQLYtgFjDKpDzmO7Uo5HPP62u6MDimXBpZtGxtwa8dhJe5NBIsJjUCAwEAAQ==".to_string(),
+            message: "SEND $100   // By Alice   // 1678198050097".to_string(),
+            sig: "EQWylQX/AIcQDStCGB6ujRmqDalO5z52VguJO9f5S0C1VPhGFh58r8Mi0Wo+ue8a".to_string()
+        };
+
+        let tx_vec = vec![tx];
+        let (merkle_root, merkle) = MerkleTree::create_merkle_tree(tx_vec);
+
+        for level in merkle.hashes {
+            println!("{}\n", level.join(", "))
+        }
+        assert!(merkle_root == "87bc6ad64508aac0bc106a379cb0616924095dfbab4ca02297e83ef375b70b7f");
+        // Expected output:
+        // c6883d91b61cf91f34b0ccf103903b12a6e12bcfb25e7db998f61eaba2c33fbd, c6883d91b61cf91f34b0ccf103903b12a6e12bcfb25e7db998f61eaba2c33fbd
+        // 87bc6ad64508aac0bc106a379cb0616924095dfbab4ca02297e83ef375b70b7f
+    }
+
+    #[test]
+    fn test_merkle_tree_with_odd_num_trans() {
+        // test create_merkle_tree with odd number transactions
+        let tx1 = Transaction {
+            sender: "MDgCMQCqrJ1yIJ7cDQIdTuS+4CkKn/tQPN7bZFbbGCBhvjQxs71f6Vu+sD9eh8JGpfiZSckCAwEAAQ==".to_string(),
+            receiver: "MDgCMQDZDExOs97sRTnQLYtgFjDKpDzmO7Uo5HPP62u6MDimXBpZtGxtwa8dhJe5NBIsJjUCAwEAAQ==".to_string(),
+            message: "SEND $100   // By Alice   // 1678198053097".to_string(),
+            sig: "LJxQJi3pzVlM/7U/y5BV6kbJ9A3kXAyw2yLmBO3tG0gaEenwjRUbU9FGL7folRYA".to_string()
+        };
+        let tx2 = Transaction { 
+            sender: "MDgCMQCqrJ1yIJ7cDQIdTuS+4CkKn/tQPN7bZFbbGCBhvjQxs71f6Vu+sD9eh8JGpfiZSckCAwEAAQ==".to_string(),
+            receiver: "MDgCMQDeoEeA8OtGME/SRwp+ASKVOnjlEUHYvQfo0FLp3+fwVi/SztDdJskjzCRasGk06UUCAwEAAQ==".to_string(),
+            message: "SEND $200   // By Alice   // 1678198045087".to_string(),
+            sig: "SOuwjm0I1vwt3LE2dVWuaFJAIYrswewl1/B1eiyuvgyFU4pWeqP4pIcuHgC3JAPh".to_string()
+        };
+        let tx3 = Transaction { 
+            sender: "MDgCMQCqrJ1yIJ7cDQIdTuS+4CkKn/tQPN7bZFbbGCBhvjQxs71f6Vu+sD9eh8JGpfiZSckCAwEAAQ==".to_string(),
+            receiver: "MDgCMQDeoEeA8OtGME/SRwp+ASKVOnjlEUHYvQfo0FLp3+fwVi/SztDdJskjzCRasGk06UUCAwEAAQ==".to_string(),
+            message: "SEND $200   // By Alice   // 1678198048091".to_string(),
+            sig: "Lbmm5uxAvg8HBlC/wAgpna8iNwaHk+Yw74eKR0F7vonOPiS63YUxR/n07SjNpTUH".to_string()
+        };
+        let tx4 = Transaction { 
+            sender: "MDgCMQCqrJ1yIJ7cDQIdTuS+4CkKn/tQPN7bZFbbGCBhvjQxs71f6Vu+sD9eh8JGpfiZSckCAwEAAQ==".to_string(),
+            receiver: "MDgCMQDZDExOs97sRTnQLYtgFjDKpDzmO7Uo5HPP62u6MDimXBpZtGxtwa8dhJe5NBIsJjUCAwEAAQ==".to_string(),
+            message: "SEND $100   // By Alice   // 1678198050093".to_string(),
+            sig: "EQWylQX/AIcQDStCGB6ujRmqDalO5z52VguJO9f5S0C1VPhGFh58r8Mi0Wo+ue8a".to_string()
+        };
+        let tx5 = Transaction { 
+            sender: "MDgCMQCqrJ1yIJ7cDQIdTuS+4CkKn/tQPN7bZFbbGCBhvjQxs71f6Vu+sD9eh8JGpfiZSckCAwEAAQ==".to_string(),
+            receiver: "MDgCMQDZDExOs97sRTnQLYtgFjDKpDzmO7Uo5HPP62u6MDimXBpZtGxtwa8dhJe5NBIsJjUCAwEAAQ==".to_string(),
+            message: "SEND $100   // By Alice   // 1678198050097".to_string(),
+            sig: "EQWylQX/AIcQDStCGB6ujRmqDalO5z52VguJO9f5S0C1VPhGFh58r8Mi0Wo+ue8a".to_string()
+        };
+
+
+        let tx_vec = vec![tx1, tx2, tx3, tx4, tx5];
+        let (merkle_root, merkle) = MerkleTree::create_merkle_tree(tx_vec);
+        for level in merkle.hashes {
+            println!("{}\n", level.join(", "))
+        }
+        assert!(merkle_root == "30398282029bb56efde3339a8d2bcd22f2f7b8e24ae7fffd2d9a2f4573941dc8");
+        // Expected output:
+        // 0cb819e19d34ee88b6c20c78cea0aec818f1d6875479c9c9a1505c27495d7a91, 9977c7f05151d3b9bae366fd55facd78ef3054508c1950be7821322e4a7f11fe, b2f3877e2827e9761b902b0eb092a787fe662e58f65eb8978f14e59490a368ff, 2764749767b38c8f947005179a3b5aba56de75261c9b42bdf45799baca0738b4, c6883d91b61cf91f34b0ccf103903b12a6e12bcfb25e7db998f61eaba2c33fbd, c6883d91b61cf91f34b0ccf103903b12a6e12bcfb25e7db998f61eaba2c33fbd
+        // d9961bbcbbcedfa994a951662da7285ccc82940a6e65028da233e21b1c543a13, aeec55bd3c6bcc5749cd248fd88b65de45fd14b42abdad4b3c874c2e00865a1b, 87bc6ad64508aac0bc106a379cb0616924095dfbab4ca02297e83ef375b70b7f, 87bc6ad64508aac0bc106a379cb0616924095dfbab4ca02297e83ef375b70b7f
+        // 3c1ad8fb380a0808e5c0c0a864040d74338de2aa3a9f5aa2657371b4f5a68ae6, 41ab3da92d59f3d30d59302c59e3951e53841049fd35d7d615ea607cf1214d12
+        // 30398282029bb56efde3339a8d2bcd22f2f7b8e24ae7fffd2d9a2f4573941dc8
+    }
+
     /// Test basic block tree creation
     #[test]
     fn block_test_basic() {
@@ -166,52 +236,7 @@ mod tests {
     fn blocktree_additional_test() {
         // Please fill in the blank
         // You can add your own json files and read them for testing
-        
-        // test create_merkle_tree with odd number transactions
-        let tx1 = Transaction {
-            sender: "MDgCMQCqrJ1yIJ7cDQIdTuS+4CkKn/tQPN7bZFbbGCBhvjQxs71f6Vu+sD9eh8JGpfiZSckCAwEAAQ==".to_string(),
-            receiver: "MDgCMQDZDExOs97sRTnQLYtgFjDKpDzmO7Uo5HPP62u6MDimXBpZtGxtwa8dhJe5NBIsJjUCAwEAAQ==".to_string(),
-            message: "SEND $100   // By Alice   // 1678198053097".to_string(),
-            sig: "LJxQJi3pzVlM/7U/y5BV6kbJ9A3kXAyw2yLmBO3tG0gaEenwjRUbU9FGL7folRYA".to_string()
-        };
-        let tx2 = Transaction { 
-            sender: "MDgCMQCqrJ1yIJ7cDQIdTuS+4CkKn/tQPN7bZFbbGCBhvjQxs71f6Vu+sD9eh8JGpfiZSckCAwEAAQ==".to_string(),
-            receiver: "MDgCMQDeoEeA8OtGME/SRwp+ASKVOnjlEUHYvQfo0FLp3+fwVi/SztDdJskjzCRasGk06UUCAwEAAQ==".to_string(),
-            message: "SEND $200   // By Alice   // 1678198045087".to_string(),
-            sig: "SOuwjm0I1vwt3LE2dVWuaFJAIYrswewl1/B1eiyuvgyFU4pWeqP4pIcuHgC3JAPh".to_string()
-        };
-        let tx3 = Transaction { 
-            sender: "MDgCMQCqrJ1yIJ7cDQIdTuS+4CkKn/tQPN7bZFbbGCBhvjQxs71f6Vu+sD9eh8JGpfiZSckCAwEAAQ==".to_string(),
-            receiver: "MDgCMQDeoEeA8OtGME/SRwp+ASKVOnjlEUHYvQfo0FLp3+fwVi/SztDdJskjzCRasGk06UUCAwEAAQ==".to_string(),
-            message: "SEND $200   // By Alice   // 1678198048091".to_string(),
-            sig: "Lbmm5uxAvg8HBlC/wAgpna8iNwaHk+Yw74eKR0F7vonOPiS63YUxR/n07SjNpTUH".to_string()
-        };
-        let tx4 = Transaction { 
-            sender: "MDgCMQCqrJ1yIJ7cDQIdTuS+4CkKn/tQPN7bZFbbGCBhvjQxs71f6Vu+sD9eh8JGpfiZSckCAwEAAQ==".to_string(),
-            receiver: "MDgCMQDZDExOs97sRTnQLYtgFjDKpDzmO7Uo5HPP62u6MDimXBpZtGxtwa8dhJe5NBIsJjUCAwEAAQ==".to_string(),
-            message: "SEND $100   // By Alice   // 1678198050093".to_string(),
-            sig: "EQWylQX/AIcQDStCGB6ujRmqDalO5z52VguJO9f5S0C1VPhGFh58r8Mi0Wo+ue8a".to_string()
-        };
-        let tx5 = Transaction { 
-            sender: "MDgCMQCqrJ1yIJ7cDQIdTuS+4CkKn/tQPN7bZFbbGCBhvjQxs71f6Vu+sD9eh8JGpfiZSckCAwEAAQ==".to_string(),
-            receiver: "MDgCMQDZDExOs97sRTnQLYtgFjDKpDzmO7Uo5HPP62u6MDimXBpZtGxtwa8dhJe5NBIsJjUCAwEAAQ==".to_string(),
-            message: "SEND $100   // By Alice   // 1678198050097".to_string(),
-            sig: "EQWylQX/AIcQDStCGB6ujRmqDalO5z52VguJO9f5S0C1VPhGFh58r8Mi0Wo+ue8a".to_string()
-        };
 
-
-        let tx_vec = vec![tx1, tx2, tx3, tx4, tx5];
-        let (merkle_root, merkle) = MerkleTree::create_merkle_tree(tx_vec);
-        for level in merkle.hashes {
-            println!("{}\n", level.join(", "))
-        }
-        assert!(merkle_root == "30398282029bb56efde3339a8d2bcd22f2f7b8e24ae7fffd2d9a2f4573941dc8");
-        // Expected output:
-        // 0cb819e19d34ee88b6c20c78cea0aec818f1d6875479c9c9a1505c27495d7a91, 9977c7f05151d3b9bae366fd55facd78ef3054508c1950be7821322e4a7f11fe, b2f3877e2827e9761b902b0eb092a787fe662e58f65eb8978f14e59490a368ff, 2764749767b38c8f947005179a3b5aba56de75261c9b42bdf45799baca0738b4, c6883d91b61cf91f34b0ccf103903b12a6e12bcfb25e7db998f61eaba2c33fbd, c6883d91b61cf91f34b0ccf103903b12a6e12bcfb25e7db998f61eaba2c33fbd
-        // d9961bbcbbcedfa994a951662da7285ccc82940a6e65028da233e21b1c543a13, aeec55bd3c6bcc5749cd248fd88b65de45fd14b42abdad4b3c874c2e00865a1b, 87bc6ad64508aac0bc106a379cb0616924095dfbab4ca02297e83ef375b70b7f, 87bc6ad64508aac0bc106a379cb0616924095dfbab4ca02297e83ef375b70b7f
-        // 3c1ad8fb380a0808e5c0c0a864040d74338de2aa3a9f5aa2657371b4f5a68ae6, 41ab3da92d59f3d30d59302c59e3951e53841049fd35d7d615ea607cf1214d12
-        // 30398282029bb56efde3339a8d2bcd22f2f7b8e24ae7fffd2d9a2f4573941dc8
-    
         // test Transaction.verify method
         let tx = Transaction {
             sender: "MDgCMQCqrJ1yIJ7cDQIdTuS+4CkKn/tQPN7bZFbbGCBhvjQxs71f6Vu+sD9eh8JGpfiZSckCAwEAAQ==".to_string(),

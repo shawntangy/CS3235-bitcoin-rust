@@ -53,27 +53,15 @@ fn create_puzzle(chain_p: Arc<Mutex<BlockTree>>, tx_pool_p: Arc<Mutex<TxPool>>, 
     let pending_finalization_txs = chain_p.lock().unwrap().get_pending_finalization_txs();
     let filtered_txs = tx_pool_p.lock().unwrap().filter_tx(tx_count, &pending_finalization_txs);
     let last_block_id = chain_p.lock().unwrap().working_block_id.clone();
-    let last_block = chain_p.lock().unwrap().get_block(last_block_id).unwrap();
-
-    // build the puzzle
-    let puzzle = Puzzle {
-        // Please fill in the blank
-        // Create a puzzle with the block_id of the parent node and the merkle root of the transactions.
-        parent: last_block.header.parent.clone(),
-        merkle_root: last_block.header.merkle_root.clone(),
-        reward_receiver: reward_receiver.clone()
-    };
-    let puzzle_str = serde_json::to_string(&puzzle).unwrap().to_owned();
-
     // Please fill in the blank
     // Create a block node with the transactions and the merkle root.
     // Leave the nonce and the block_id empty (to be filled after solving the puzzle).
     // The timestamp can be set to any positive interger.
-    let (_, merkle_tree) = MerkleTree::create_merkle_tree(filtered_txs.clone());
+    let (merkle_root, merkle_tree) = MerkleTree::create_merkle_tree(filtered_txs.clone());
     let pre_block = BlockNode {
         header: BlockNodeHeader {
-            parent: last_block.header.parent.clone(),
-            merkle_root: last_block.header.merkle_root.clone(),
+            parent: last_block_id.clone(),
+            merkle_root: merkle_root.clone(),
             timestamp: 14,
             block_id: "".to_owned(),
             nonce: "".to_owned(),
@@ -84,6 +72,17 @@ fn create_puzzle(chain_p: Arc<Mutex<BlockTree>>, tx_pool_p: Arc<Mutex<TxPool>>, 
             transactions: filtered_txs
         }
     };
+
+    // build the puzzle
+    let puzzle = Puzzle {
+        // Please fill in the blank
+        // Create a puzzle with the block_id of the parent node and the merkle root of the transactions.
+        parent: last_block_id.clone(),
+        merkle_root: merkle_root.clone(),
+        reward_receiver: reward_receiver.clone()
+    };
+    let puzzle_str = serde_json::to_string(&puzzle).unwrap().to_owned();
+
     // In the end, it returns  (puzzle_str, pre_block);
     (puzzle_str, pre_block)
     
