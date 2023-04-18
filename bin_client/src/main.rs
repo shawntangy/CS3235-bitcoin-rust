@@ -23,7 +23,7 @@ use crossterm::{
 use std::fs::{File, read};
 use std::io::{self, Read, Write, BufReader, BufRead};
 use std::process::{Command, Stdio};
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, HashMap};
 use std::time::SystemTime;
 
 use std::{thread, time::{Duration, Instant}};
@@ -216,7 +216,6 @@ fn main() {
         return sign_req_str;
     };
 
-
     if std::env::args().len() != 6 {
         // Then there must be 7 arguments provided. The last argument is the bot commands path
         // Please fill in the blank
@@ -279,7 +278,6 @@ fn main() {
         });
         handle_bot.join().unwrap();
     }
-
 
     // Please fill in the blank
     // - Spawn threads to read/write from/to bin_nakamoto/bin_wallet. (Through their piped stdin and stdout)
@@ -405,7 +403,6 @@ fn main() {
         }
     });
 
-    
     let app_ui_ref_5 = app_arc.clone();
     let handle_balance_status_update = thread::spawn(move || {
         loop {
@@ -417,6 +414,8 @@ fn main() {
             let mut balance_status_resp = String::new();
             bin_nakamoto_buf_reader.read_line(&mut balance_status_resp).unwrap();
             let ipc_balance_status_msg_resp : IPCMessageRespNakamoto = serde_json::from_str(&balance_status_resp);
+            let resp : HashMap<String, String> = serde_json::from_str(s);
+            
             let mut app_5 = app_ui_ref_5.lock().unwrap();
             match ipc_balance_status_msg_resp {
                 IPCMessageRespNakamoto::AddressBalance(uid, balance) => {
