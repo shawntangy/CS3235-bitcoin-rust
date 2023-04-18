@@ -207,6 +207,105 @@ mod tests {
         // Please fill in the blank
         
     }
+
+    #[test]
+    fn test_p2pnetwork_duplicated_block_and_tx() {
+        // create fake nodes
+        let fake_node1 = TcpListener::bind("127.0.0.1:9012").unwrap();
+        let fake_node2 = TcpListener::bind("127.0.0.1:9013").unwrap();
+        let _fake_node1_handle = thread::spawn(move || {
+            for stream in fake_node1.incoming() {
+                println!("--- fake_neighbor_1 INCOMING STREAM ---");
+                fake_neighbor(stream.unwrap());
+            }
+        });
+        let _fake_node2_handle = thread::spawn(move || {
+            for stream in fake_node2.incoming() {
+                println!("--- fake_neighbor_2 INCOMING STREAM ---");
+                fake_neighbor(stream.unwrap());
+            }
+        });
+        
+        let (
+            network,
+            upd_block_in_rx, 
+            upd_trans_in_rx,
+            block_out_tx,
+            trans_out_tx,
+            req_block_id_out_tx,
+        ) = P2PNetwork::create(
+            NetAddress { ip: "127.0.0.1".to_owned(), port: 9011 },
+            vec![
+                NetAddress { ip: "127.0.0.1".to_owned(), port: 9012 },
+                NetAddress { ip: "127.0.0.1".to_owned(), port: 9013 }
+            ]
+        );
+
+
+
+        let _upd_block_in_listener_handle = thread::spawn(move || {
+            for block in upd_block_in_rx {
+                println!("[Main] [Get Block Update] {:?}", block);
+            }
+        });
+
+        let _upd_trans_in_listener_handle = thread::spawn(move || {
+            for trans in upd_trans_in_rx {
+                println!("[Main][Get Trans update] {:?}", trans);
+            }
+        });
+
+
+        let transaction = Transaction {
+            sender: "hello".to_string(),
+            receiver: "hi".to_string(),
+            message: "msg".to_string(),
+            sig: "sig".to_string()
+        };
+        let node_header = BlockNodeHeader {
+            parent: "hahaha".to_string(),
+            merkle_root: "0987".to_string(),
+            timestamp: 123,
+            block_id: "2222".to_string(),
+            nonce: "1111".to_string(),
+            reward_receiver: "AAA".to_string(),
+        };
+        let node = BlockNode {
+            header: node_header,
+            transactions_block:  Transactions { merkle_tree: MerkleTree {hashes: vec![]}, transactions: vec![]},
+        };
+        block_out_tx.send(node.clone()).unwrap();
+        block_out_tx.send(node).unwrap(); // send duplicated block again
+        trans_out_tx.send(transaction.clone()).unwrap();
+        trans_out_tx.send(transaction).unwrap(); // send duplicated tx again
+        thread::sleep(Duration::from_millis(200));
+
+        // Expected Log
+        // running 1 test
+
+        // --- fake_neighbor_1 INCOMING STREAM ---
+        // [fake_neighbor] [BEGIN]
+        // [fake_neighbor] [Write thread]
+        // [fake_neighbor] [Read thread]
+        // [handle_client] [Read] {"BroadcastBlock":{"header":{"parent":"hahaha","merkle_root":"0987","timestamp":123,"block_id":"2222","nonce":"1111","reward_receiver":"AAA"},"transactions_block":{"merkle_tree":{"hashes":[]},"transactions":[]}}}
+        // [handle_client] [Read] {"BroadcastTx":{"sender":"hello","receiver":"hi","message":"msg","sig":"sig"}}
+        // [handle_client] [Read] {"BroadcastTx":{"sender":"AAA","receiver":"DDD","message":"good","sig":"blabla"}}
+        // [handle_client] [Read] {"BroadcastBlock":{"header":{"parent":"ZZZZ","merkle_root":"12345","timestamp":345,"block_id":"","nonce":"98765","reward_receiver":"AAA"},"transactions_block":{"merkle_tree":{"hashes":[]},"transactions":[]}}}
+        
+        // --- fake_neighbor_2 INCOMING STREAM ---
+        // [fake_neighbor] [BEGIN]
+        // [fake_neighbor] [Write thread]
+        // [fake_neighbor] [Read thread]
+        // [handle_client] [Read] {"BroadcastBlock":{"header":{"parent":"hahaha","merkle_root":"0987","timestamp":123,"block_id":"2222","nonce":"1111","reward_receiver":"AAA"},"transactions_block":{"merkle_tree":{"hashes":[]},"transactions":[]}}}
+        // [handle_client] [Read] {"BroadcastTx":{"sender":"hello","receiver":"hi","message":"msg","sig":"sig"}}
+        // [handle_client] [Read] {"BroadcastTx":{"sender":"AAA","receiver":"DDD","message":"good","sig":"blabla"}}
+        // [handle_client] [Read] {"BroadcastBlock":{"header":{"parent":"ZZZZ","merkle_root":"12345","timestamp":345,"block_id":"","nonce":"98765","reward_receiver":"AAA"},"transactions_block":{"merkle_tree":{"hashes":[]},"transactions":[]}}}
+        
+        // Duplicated block received and not broadcasted: BlockNode { header: BlockNodeHeader { parent: "hahaha", merkle_root: "0987", timestamp: 123, block_id: "2222", nonce: "1111", reward_receiver: "AAA" }, transactions_block: Transactions { merkle_tree: MerkleTree { hashes: [] }, transactions: [] } }
+        // Duplicated block received and not broadcasted: BlockNode { header: BlockNodeHeader { parent: "ZZZZ", merkle_root: "12345", timestamp: 345, block_id: "", nonce: "98765", reward_receiver: "AAA" }, transactions_block: Transactions { merkle_tree: MerkleTree { hashes: [] }, transactions: [] } }
+        // Duplicated tx received and not broadcasted: Transaction { sender: "hello", receiver: "hi", message: "msg", sig: "sig" }
+        // Duplicated tx received and not broadcasted: Transaction { sender: "AAA", receiver: "DDD", message: "good", sig: "blabla" }
+    }
 }
 
 
