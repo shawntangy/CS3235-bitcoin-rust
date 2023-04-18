@@ -138,10 +138,12 @@ impl Miner {
         // For debugging purpose, you can return any dictionary of strings as the status of the miner. 
         // It should be displayed in the Client UI eventually.
         let mut miner_status = BTreeMap::new();
-        miner_status.insert("is_running".to_string(), self.is_running.to_string());
+        miner_status.insert(String::from("thread_count"), self.thread_count.to_string());
+        miner_status.insert(String::from("leading_zero_len"), self.leading_zero_len.to_string());
+        miner_status.insert(String::from("is_running"), self.is_running.to_string());
+        // Add any other relevant information to the miner_status dictionary here
         miner_status
         // this is not done cause idk what to put inside
-        
     }
 }
 

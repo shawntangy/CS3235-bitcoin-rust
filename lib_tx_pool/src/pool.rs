@@ -135,8 +135,12 @@ impl TxPool {
         // Please fill in the blank
         // For debugging purpose, you can return any dictionary of strings as the status of the tx_pool. 
         // It should be displayed in the Client UI eventually.
-        todo!();
-        
+        let mut status = BTreeMap::new();
+        status.insert(String::from("pool_size"), self.pool_tx_ids.len().to_string());
+        status.insert(String::from("removed_tx_count"), self.removed_tx_ids.len().to_string());
+        status.insert(String::from("last_finalized_block_id"), self.last_finalized_block_id.to_string());
+        // Add any other relevant information to the status dictionary here
+        status
     }
 }
 

@@ -174,11 +174,13 @@ impl P2PNetwork {
 
     /// Get status information of the P2PNetwork for debug printing.
     pub fn get_status(&self) -> BTreeMap<String, String> {
-        // Please fill in the blank
-        // For debugging purpose, you can return any dictionary of strings as the status of the network. 
-        // It should be displayed in the Client UI eventually.
-        todo!();
-        
+        let mut status = BTreeMap::new();
+        status.insert("send_msg_count".to_string(), self.send_msg_count.to_string());
+        status.insert("recv_msg_count".to_string(), self.recv_msg_count.to_string());
+        status.insert("address".to_string(), format!("{:?}", self.address));
+        status.insert("neighbors_len".to_string(), format!("{:?}", self.neighbors.len()));
+        status.insert("tcps_len".to_string(), format!("{:?}", self.tcps.len()));
+        status
     }
 
 }
