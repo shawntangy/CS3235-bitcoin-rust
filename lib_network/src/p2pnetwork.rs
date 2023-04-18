@@ -31,6 +31,10 @@ pub struct P2PNetwork {
     pub neighbors: Vec<NetAddress>,
     /// Vec of TcpStream
     pub tcps: Vec<NetChannelTCP>,
+    // Vec of blocks id sent before
+    pub sent_blocks: HashSet<BlockId>,
+    // Vec of transactions id sent before
+    pub sent_trans: HashSet<TxId>
 }
 
 
@@ -73,7 +77,7 @@ impl P2PNetwork {
         ip_addr.push_str(&semi_colon);
         ip_addr.push_str(&port_no);
         // 1. create a P2PNetwork instance
-        let p2pnetwork = Arc::new(Mutex::new(P2PNetwork { send_msg_count: 0, recv_msg_count: 0, address, neighbors: neighbors.clone(), tcps: vec![] }));
+        let p2pnetwork = Arc::new(Mutex::new(P2PNetwork { send_msg_count: 0, recv_msg_count: 0, address, neighbors: neighbors.clone(), tcps: vec![], sent_blocks: HashSet::new(), sent_trans: HashSet::new()}));
         // 2. create mpsc channels for sending and receiving messages
         let (upd_block_in_tx, upd_block_in_rx) = mpsc::channel::<BlockNode>();
         let (upd_trans_in_tx, upd_trans_in_rx) = mpsc::channel::<Transaction>();
@@ -143,8 +147,17 @@ impl P2PNetwork {
             for block in &block_out_rx {
                 // part of 7: broadcast block to all neighbors
                 let mut p2pnetwork_temp = p2pnetwork_clone3.lock().unwrap(); // acquire the lock on the Arc<Mutex<P2PNetwork>> to access its fields
-                for tcp in p2pnetwork_temp.tcps.iter_mut() { // iterate through the `tcps` Vec
-                    tcp.write_msg(NetMessage::BroadcastBlock(block.clone()));
+                p2pnetwork_temp.recv_msg_count += 1;
+                // broadcast only if never send this block before
+                if (!p2pnetwork_temp.sent_blocks.contains(&block.header.block_id.clone())) {
+                    for tcp in p2pnetwork_temp.tcps.iter_mut() { // iterate through the `tcps` Vec
+                        tcp.write_msg(NetMessage::BroadcastBlock(block.clone()));
+                    }
+                    p2pnetwork_temp.sent_blocks.insert(block.header.block_id.clone());
+                    p2pnetwork_temp.send_msg_count += 1;
+                }
+                else {
+                    println!("Duplicated block received and not broadcasted: {:?}", block);
                 }
             }
     
@@ -156,8 +169,17 @@ impl P2PNetwork {
             for trans in &trans_out_rx {
                 // part of 7: broadcast trans to all neighbors
                 let mut p2pnetwork_temp = p2pnetwork_clone4.lock().unwrap(); // acquire the lock on the Arc<Mutex<P2PNetwork>> to access its fields
-                for tcp in p2pnetwork_temp.tcps.iter_mut() { // iterate through the `tcps` Vec
-                    tcp.write_msg(NetMessage::BroadcastTx(trans.clone()));
+                p2pnetwork_temp.recv_msg_count += 1;
+                // broadcast only if never send this trans before
+                if (!p2pnetwork_temp.sent_trans.contains(&trans.gen_hash())) {
+                    for tcp in p2pnetwork_temp.tcps.iter_mut() { // iterate through the `tcps` Vec
+                        tcp.write_msg(NetMessage::BroadcastTx(trans.clone()));
+                    }
+                    p2pnetwork_temp.sent_trans.insert(trans.gen_hash());
+                    p2pnetwork_temp.send_msg_count += 1;
+                }
+                else {
+                    println!("Duplicated tx received and not broadcasted: {:?}", trans);
                 }
             }
         });
