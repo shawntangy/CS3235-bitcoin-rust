@@ -156,9 +156,6 @@ impl P2PNetwork {
                     p2pnetwork_temp.sent_blocks.insert(block.header.block_id.clone());
                     p2pnetwork_temp.send_msg_count += 1;
                 }
-                else {
-                    println!("Duplicated block received and not broadcasted: {:?}", block);
-                }
             }
     
         });
@@ -177,9 +174,6 @@ impl P2PNetwork {
                     }
                     p2pnetwork_temp.sent_trans.insert(trans.gen_hash());
                     p2pnetwork_temp.send_msg_count += 1;
-                }
-                else {
-                    println!("Duplicated tx received and not broadcasted: {:?}", trans);
                 }
             }
         });
@@ -202,7 +196,7 @@ impl P2PNetwork {
         let mut status_map = BTreeMap::new();
         status_map.insert("#address".to_string(), format!("ip: {} port: {}", self.address.ip, self.address.port));
         status_map.insert("#recv_msg".to_string(), self.recv_msg_count.to_string());
-        status_map.insert("send_msg".to_string(), self.send_msg_count.to_string());
+        status_map.insert("#send_msg".to_string(), self.send_msg_count.to_string());
         status_map
     }
 
