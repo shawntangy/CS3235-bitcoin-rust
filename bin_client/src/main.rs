@@ -131,24 +131,24 @@ fn main() {
     let mut bin_wallet = Command::new("./target/debug/bin_wallet").stdin(Stdio::piped()).stdout(Stdio::piped()).spawn().unwrap();
     
     // - Get stdin and stdout of those processes
-    let mut nakamoto_stdin = bin_nakamoto.stdin.unwrap();
-    let mut nakamoto_stdout = bin_nakamoto.stdout.unwrap();
+    let nakamoto_stdin = bin_nakamoto.stdin.unwrap();
+    let nakamoto_stdout = bin_nakamoto.stdout.unwrap();
 
     let mut nakamoto_stdin_p = Arc::new(Mutex::new(nakamoto_stdin));
     let mut nakamoto_stdout_p = Arc::new(Mutex::new(nakamoto_stdout));
 
-    let mut bin_wallet_stdin = bin_wallet.stdin.unwrap();
-    let mut bin_wallet_stdout = bin_wallet.stdout.unwrap();
+    let mut bin_wallet_stdin = bin_wallet.stdin.as_mut().unwrap();
+    let mut bin_wallet_stdout = bin_wallet.stdout.as_mut().unwrap();
 
     let mut bin_wallet_stdin_p = Arc::new(Mutex::new(bin_wallet_stdin));
     let mut bin_wallet_stdout_p = Arc::new(Mutex::new(bin_wallet_stdout));
 
     // - Create buffer readers if necessary
-    let mut nakamoto_buf_reader = BufReader::new(nakamoto_stdout);
-    let mut nakamoto_buf_reader_p = Arc::new(Mutex::new(nakamoto_buf_reader));
+    // let mut nakamoto_buf_reader = BufReader::new(nakamoto_stdout);
+    // let mut nakamoto_buf_reader_p = Arc::new(Mutex::new(nakamoto_buf_reader));
 
-    let mut bin_wallet_buf_reader = BufReader::new(bin_wallet_stdout);
-    let mut bin_wallet_buf_reader_p = Arc::new(Mutex::new(bin_wallet_buf_reader));;
+    // let mut bin_wallet_buf_reader = BufReader::new(bin_wallet_stdout);
+    // let mut bin_wallet_buf_reader_p = Arc::new(Mutex::new(bin_wallet_buf_reader));;
 
     // - Send initialization requests to bin_nakamoto and bin_wallet
     // - Init request code for bin_nakamoto
@@ -195,7 +195,7 @@ fn main() {
     bin_wallet_stdin.write_all(user_info_req_str.as_bytes()).unwrap();
     
     let mut resp = String::new();
-    bin_wallet_buf_reader.read_line(&mut resp).unwrap();
+    bin_wallet_stdout.read_to_string(buf).read_line(&mut resp).unwrap();
     let ipc_msg_resp : IPCMessageRespWallet = serde_json::from_str(&resp).unwrap();
     match ipc_msg_resp {
         IPCMessageRespWallet::UserInfo(username, uid) => {
@@ -418,11 +418,11 @@ fn main() {
             let balance_status_req = IPCMessageReqNakamoto::GetAddressBalance(user_id);
             let mut balance_status_req_str = serde_json::to_string(&balance_status_req).unwrap();
             balance_status_req_str.push('\n');
-            nakamoto_stdin_p_cloned_4.lock().unwrap().write_all(balance_status_req_str.as_bytes());
+            nakamoto_stdin_p_cloned_5.lock().unwrap().write_all(balance_status_req_str.as_bytes());
 
 
             let mut balance_status_resp = String::new();
-            nakamoto_buf_reader_p_cloned_4.lock().unwrap().read_line(&mut balance_status_resp).unwrap();
+            nakamoto_buf_reader_p_cloned_5.lock().unwrap().read_line(&mut balance_status_resp).unwrap();
             let ipc_balance_status_msg_resp : IPCMessageRespNakamoto = serde_json::from_str(&balance_status_resp).unwrap();
             
             let mut app_5 = app_ui_ref_5.lock().unwrap();
