@@ -194,3 +194,103 @@ fn main() {
 }
 
 
+// Syscall used
+
+// strace -f -o ./syscall/test_nakamoto_follow.strace ./target/debug/bin_nakamoto < ./tests/cli_test_nakamoto/cli_test_nakamoto_0.input 
+// cat ./syscall/test_nakamoto_follow.strace | grep -oE '^[^\(]*?\(' | sort | uniq | sed 's/.$//'
+
+// 5933  access
+// 5933  arch_prctl
+// 5933  bind
+// 5933  brk
+// 5933  clone3
+// 5933  close
+// 5933  execve
+// 5933  exit_group
+// 5933  futex
+// 5933  <... futex resumed>)              = -1 EAGAIN 
+// 5933  getrandom
+// 5933  listen
+// 5933  mmap
+// 5933  mprotect
+// 5933  munmap
+// 5933  newfstatat
+// 5933  openat
+// 5933  poll
+// 5933  pread64
+// 5933  prlimit64
+// 5933  read
+// 5933  rseq
+// 5933  rt_sigaction
+// 5933  rt_sigprocmask
+// 5933  sched_getaffinity
+// 5933  set_robust_list
+// 5933  setsockopt
+// 5933  set_tid_address
+// 5933  sigaltstack
+// 5933  socket
+// 5933  write
+// 5934  accept4
+// 5934  mmap
+// 5934  mprotect
+// 5934  rseq
+// 5934  rt_sigprocmask
+// 5934  sched_getaffinity
+// 5934  set_robust_list
+// 5934  sigaltstack
+// 5935  futex
+// 5935  mmap
+// 5935  mprotect
+// 5935  rseq
+// 5935  rt_sigprocmask
+// 5935  sched_getaffinity
+// 5935  set_robust_list
+// 5935  sigaltstack
+// 5936  futex
+// 5936  <... futex resumed>)              = -1 EAGAIN 
+// 5936  mmap
+// 5936  mprotect
+// 5936  munmap
+// 5936  rseq
+// 5936  rt_sigprocmask
+// 5936  sched_getaffinity
+// 5936  set_robust_list
+// 5936  sigaltstack
+// 5936  write
+// 5937  exit
+// 5937  getrandom
+// 5937  madvise
+// 5937  mmap
+// 5937  mprotect
+// 5937  munmap
+// 5937  rseq
+// 5937  rt_sigprocmask
+// 5937  sched_getaffinity
+// 5937  set_robust_list
+// 5937  sigaltstack
+// 5937  write
+// 5938  exit
+// 5938  futex
+// 5938  <... futex resumed>)              = -1 EAGAIN 
+// 5938  getrandom
+// 5938  madvise
+// 5938  mmap
+// 5938  mprotect
+// 5938  munmap
+// 5938  rseq
+// 5938  rt_sigprocmask
+// 5938  sched_getaffinity
+// 5938  set_robust_list
+// 5938  sigaltstack
+// 5938  write
+// 5939  futex
+// 5939  <... futex resumed>)              = -1 EAGAIN 
+// 5939  getrandom
+// 5939  mmap
+// 5939  mprotect
+// 5939  munmap
+// 5939  rseq
+// 5939  rt_sigprocmask
+// 5939  sched_getaffinity
+// 5939  set_robust_list
+// 5939  sigaltstack

@@ -3,6 +3,75 @@
         "mismatch_action": "kill_process",
         "match_action": "allow",
         "filter": [
+            {
+                "syscall": "access"
+            },
+            {
+                "syscall": "arch_prctl"
+            },
+            {
+                "syscall": "brk"
+            },
+            {
+                "syscall": "close"
+            },
+            {
+                "syscall": "execve"
+            },
+            {
+                "syscall": "exit_group"
+            },
+            {
+                "syscall": "getrandom"
+            },
+            {
+                "syscall": "mmap"
+            },
+            {
+                "syscall": "mprotect"
+            },
+            {
+                "syscall": "munmap"
+            },
+            {
+                "syscall": "newfstatat"
+            },
+            {
+                "syscall": "openat"
+            },
+            {
+                "syscall": "poll"
+            },
+            {
+                "syscall": "pread64"
+            },
+            {
+                "syscall": "prlimit64"
+            },
+            {
+                "syscall": "read"
+            },
+            {
+                "syscall": "rseq"
+            },
+            {
+                "syscall": "rt_sigaction"
+            },
+            {
+                "syscall": "sched_getaffinity"
+            },
+            {
+                "syscall": "set_robust_list"
+            },
+            {
+                "syscall": "set_tid_address"
+            },
+            {
+                "syscall": "sigaltstack"
+            },
+            {
+                "syscall": "write"
+            }
         ]
     }
 }

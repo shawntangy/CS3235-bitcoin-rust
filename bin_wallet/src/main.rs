@@ -13,6 +13,7 @@ mod wallet;
 use std::fs;
 use std::io;
 use std::io::Write;
+use seccompiler::BpfMap;
 use serde::{Serialize, Deserialize};
 
 /// Read a string from a file (help with debugging)
@@ -89,8 +90,10 @@ fn main() {
     let maybe_policy_path = std::env::args().nth(1);
     if let Some(policy_path) = maybe_policy_path {
         // If the first param is provided, read the seccomp config and apply it
-        // let policy = read_string_from_file(&policy_path);
-        // seccompiler::apply_filter(policy.as_bytes()).unwrap();
+        let policy = read_string_from_file(&policy_path);
+        let filter_map: BpfMap = seccompiler::compile_from_json(policy.as_bytes(), std::env::consts::ARCH.try_into().unwrap()).unwrap();
+        let filter = filter_map.get("main_thread").unwrap();
+        seccompiler::apply_filter(&filter).unwrap();
     }
 
     // The main logic of the bin_wallet starts here
@@ -180,3 +183,30 @@ mod test {
     }
 }
 
+// Syscalls used 
+// strace -f -o ./syscall/test_wallet_follow.strace ./target/debug/bin_wallet < ./tests/cli_test_wallet/cli_test_wallet_0.input
+// cat ./syscall/test_wallet_follow.strace | grep -oE '^[^\(]*?\(' | sort | uniq | sed 's/.$//'
+
+// 5072  access
+// 5072  arch_prctl
+// 5072  brk
+// 5072  close
+// 5072  execve
+// 5072  exit_group
+// 5072  getrandom
+// 5072  mmap
+// 5072  mprotect
+// 5072  munmap
+// 5072  newfstatat
+// 5072  openat
+// 5072  poll
+// 5072  pread64
+// 5072  prlimit64
+// 5072  read
+// 5072  rseq
+// 5072  rt_sigaction
+// 5072  sched_getaffinity
+// 5072  set_robust_list
+// 5072  set_tid_address
+// 5072  sigaltstack
+// 5072  write
