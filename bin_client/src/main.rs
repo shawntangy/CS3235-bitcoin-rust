@@ -127,7 +127,7 @@ fn main() {
     
     // Please fill in the blank
     // - Create bin_nakamoto process:  Command::new("./target/debug/bin_nakamoto")...
-    let mut bin_nakamoto_process = Command::new("./target/debug/bin_nakamoto").stdin(Stdio::piped()).stdout(Stdio::piped()).spawn().unwrap();
+    let mut bin_nakamoto_process = Command::new("./target/debug/bin_nakamoto").stdin(Stdio::piped()).stdout(Stdio::piped()).stderr(Stdio::piped()).spawn().unwrap();
     // - Create bin_wallet process:  Command::new("./target/debug/bin_wallet")...
     let mut bin_wallet_process = Command::new("./target/debug/bin_wallet").stdin(Stdio::piped()).stdout(Stdio::piped()).spawn().unwrap();
     
@@ -332,7 +332,6 @@ fn main() {
         loop {
             let mut nakamoto_resp = String::new();
             nakamoto_stdout_p_cloned_c.lock().unwrap().read_line(&mut nakamoto_resp).unwrap();
-            println!("nakamoto_resp {}", nakamoto_resp);
             let ipc_nakamoto_resp : IPCMessageRespNakamoto = serde_json::from_str(&nakamoto_resp).unwrap();
             let mut app_c = app_ui_ref_c.lock().unwrap();
             match ipc_nakamoto_resp {
