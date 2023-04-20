@@ -228,53 +228,53 @@ fn main() {
         return sign_req_str;
     };
 
-    if std::env::args().len() != 6 {
-        // Then there must be 7 arguments provided. The last argument is the bot commands path
-        // Please fill in the blank
-        // Create a thread to read the bot commands from `bot_command_path`, execute those commands and update the UI
-        // Notice that the `SleepMs(1000)` doesn't mean that the all threads in the whole process should sleep for 1000ms. It means that 
-        // The next bot command that fakes the user interaction should be processed 1000ms later. 
-        // It should not block the execution of any other threads or the main thread.
-        let app_ui_ref_a = app_arc.clone();
-        let user_id_a = user_id.clone();
-        let bin_wallet_stdin_p_cloned_b = bin_wallet_stdin_p.clone();
-        let nakamoto_stdin_p_cloned_b = nakamoto_stdin_p.clone();
-        let bin_wallet_stdout_p_cloned_b = bin_wallet_stdout_p.clone();
-        let nakamoto_stdout_p_cloned_b = nakamoto_stdout_p.clone();
+    // if std::env::args().len() != 6 {
+    //     // Then there must be 7 arguments provided. The last argument is the bot commands path
+    //     // Please fill in the blank
+    //     // Create a thread to read the bot commands from `bot_command_path`, execute those commands and update the UI
+    //     // Notice that the `SleepMs(1000)` doesn't mean that the all threads in the whole process should sleep for 1000ms. It means that 
+    //     // The next bot command that fakes the user interaction should be processed 1000ms later. 
+    //     // It should not block the execution of any other threads or the main thread.
+    //     let app_ui_ref_a = app_arc.clone();
+    //     let user_id_a = user_id.clone();
+    //     let bin_wallet_stdin_p_cloned_b = bin_wallet_stdin_p.clone();
+    //     let nakamoto_stdin_p_cloned_b = nakamoto_stdin_p.clone();
+    //     let bin_wallet_stdout_p_cloned_b = bin_wallet_stdout_p.clone();
+    //     let nakamoto_stdout_p_cloned_b = nakamoto_stdout_p.clone();
 
-        let bot_config_path = std::env::args().nth(6).unwrap();
+    //     let bot_config_path = std::env::args().nth(6).unwrap();
 
-        thread::spawn(move || {
-            let file = File::open(bot_config_path).unwrap();
-            let mut reader = BufReader::new(file);
+    //     thread::spawn(move || {
+    //         let file = File::open(bot_config_path).unwrap();
+    //         let mut reader = BufReader::new(file);
 
-            loop {
-                if app_ui_ref_a.lock().unwrap().should_quit {
-                    break;
-                }
+    //         loop {
+    //             if app_ui_ref_a.lock().unwrap().should_quit {
+    //                 break;
+    //             }
 
-                let mut read = String::new();
-                reader.read_line(&mut read).unwrap();
-                if read.len() == 2 {
-                    continue;
-                }
+    //             let mut read = String::new();
+    //             reader.read_line(&mut read).unwrap();
+    //             if read.len() == 2 {
+    //                 continue;
+    //             }
 
-                if read.len() !=0 {
-                    let bot_command : BotCommand = serde_json::from_str(&read).unwrap();
-                    match bot_command {
-                        BotCommand::Send(receiver_user_id, transaction_message) => {
-                            let sign_req_str = create_sign_req(user_id_a.clone(), receiver_user_id, transaction_message);
-                            bin_wallet_stdin_p_cloned_b.lock().unwrap().write_all(sign_req_str.as_bytes()).unwrap();
-                        }
+    //             if read.len() !=0 {
+    //                 let bot_command : BotCommand = serde_json::from_str(&read).unwrap();
+    //                 match bot_command {
+    //                     BotCommand::Send(receiver_user_id, transaction_message) => {
+    //                         let sign_req_str = create_sign_req(user_id_a.clone(), receiver_user_id, transaction_message);
+    //                         bin_wallet_stdin_p_cloned_b.lock().unwrap().write_all(sign_req_str.as_bytes()).unwrap();
+    //                     }
     
-                        BotCommand::SleepMs(milliseconds) => {
-                            thread::sleep(Duration::from_millis(milliseconds));
-                        }
-                    }                    
-                }
-            }
-        });
-    }
+    //                     BotCommand::SleepMs(milliseconds) => {
+    //                         thread::sleep(Duration::from_millis(milliseconds));
+    //                     }
+    //                 }                    
+    //             }
+    //         }
+    //     });
+    // }
 
     // Please fill in the blank
     // - Spawn threads to read/write from/to bin_nakamoto/bin_wallet. (Through their piped stdin and stdout)

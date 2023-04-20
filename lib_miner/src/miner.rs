@@ -68,6 +68,7 @@ impl Miner {
         // If any of the threads finds a solution, other threads should stop.
         // Additionally, if the cancellation_token is set to true, all threads should stop.
         // The purpose of the cancellation_token is to allow the miner to stop the computation when other nodes have already solved the exact same puzzle.
+        miner_p.lock().unwrap().is_running = true;
         let mut handles = vec![];
 
         // Create a channel to communicate between threads.

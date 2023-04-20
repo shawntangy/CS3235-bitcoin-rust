@@ -140,10 +140,10 @@ impl P2PNetwork {
                 }
             });
         }
-        println!("[P2PNetwork] All neighbors connected.");
-        println!("[P2PNetwork] Starting processing received messages thread.");
+        eprintln!("[P2PNetwork] All neighbors connected.");
+        eprintln!("[P2PNetwork] Starting processing received messages thread.");
         // part of 6: listen from blocknode channel and broadcast received blocknode
-        println!("[P2PNetwork] Starting broadcasting blocks thread.");
+        eprintln!("[P2PNetwork] Starting broadcasting blocks thread.");
         let p2pnetwork_clone3 = p2pnetwork.clone();
         thread::spawn(move || {
             for block in &block_out_rx {
@@ -163,7 +163,7 @@ impl P2PNetwork {
         });
         
         // part of 6: listen from transaction channel and broadcast received transaction
-        println!("[P2PNetwork] Starting broadcasting transactions thread.");
+        eprintln!("[P2PNetwork] Starting broadcasting transactions thread.");
         let p2pnetwork_clone4 = p2pnetwork.clone();
         thread::spawn(move || {
             for trans in &trans_out_rx {
