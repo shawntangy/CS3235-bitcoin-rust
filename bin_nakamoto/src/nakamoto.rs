@@ -53,7 +53,8 @@ fn create_puzzle(chain_p: Arc<Mutex<BlockTree>>, tx_pool_p: Arc<Mutex<TxPool>>, 
     let pending_finalization_txs : Vec<Transaction> = vec![];
     let mut filtered_txs : Vec<Transaction> = vec![];
     let p = &mut filtered_txs;
-    let last_block_id = "";
+    let mut last_block_id = "".to_owned();
+    let last_block_id_p = &mut last_block_id;
 
     loop {
         if (*p).len() >= 1 {
@@ -61,7 +62,8 @@ fn create_puzzle(chain_p: Arc<Mutex<BlockTree>>, tx_pool_p: Arc<Mutex<TxPool>>, 
         }
         let pending_finalization_txs = chain_p.lock().unwrap().get_pending_finalization_txs();
         (*p).append(&mut tx_pool_p.lock().unwrap().filter_tx(tx_count, &pending_finalization_txs));
-        let last_block_id = chain_p.lock().unwrap().working_block_id.clone();
+        (*last_block_id_p).push_str(&chain_p.lock().unwrap().working_block_id);
+        // let last_block_id = chain_p.lock().unwrap().working_block_id.clone();
     }
     // Please fill in the blank
     // Create a block node with the transactions and the merkle root.
@@ -195,7 +197,7 @@ impl Nakamoto {
             loop {
                 let puzzle_block = create_puzzle(chain_p_clone.clone(), tx_pool_p_clone.clone(), config.max_tx_in_one_block.clone(), config.mining_reward_receiver.clone());
                 let puzzle = puzzle_block.0;
-                let mut block = puzzle_block.1;
+                let mut blocknode = puzzle_block.1;
                 let solution = Miner::solve_puzzle(miner_p_clone.clone(), puzzle, config.nonce_len.clone(), config.difficulty_leading_zero_len.clone(), config.miner_thread_count.clone(), config.miner_thread_0_seed.clone(), cancellation_token_p_clone.clone());
                 match solution {
                     None => {
@@ -208,12 +210,12 @@ impl Nakamoto {
                         eprintln!("Solved puzzle");
                         let nonce = puzzle_solution.nonce;
                         let block_id = puzzle_solution.hash;
-                        block.header.nonce = nonce;
-                        block.header.block_id = block_id;
+                        blocknode.header.nonce = nonce;
+                        blocknode.header.block_id = block_id;
                         // add it to the local blocktree
-                        chain_p_clone.lock().unwrap().add_block(block.clone(), config.difficulty_leading_zero_len_acc);
+                        chain_p_clone.lock().unwrap().add_block(blocknode.clone(), config.difficulty_leading_zero_len_acc);
                         // broadcast it by sending to sender mspc
-                        block_out_tx.send(block).unwrap();
+                        block_out_tx.send(blocknode).unwrap();
                         // create a new puzzle, and solve the new puzzle by going into the next iteration of the loop
                         *cancellation_token_p_clone.write().unwrap() = false;
                     }

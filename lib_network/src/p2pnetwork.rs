@@ -86,34 +86,34 @@ impl P2PNetwork {
         let (id_tx, id_rx) = mpsc::channel::<BlockId>();
 
         // 3. create a thread for accepting incoming TCP connections from neighbors
-        let listener = TcpListener::bind(ip_addr.clone()).unwrap();     
-        let p2pnetwork_clone = p2pnetwork.clone();
-        let block_out_tx_clone = block_out_tx.clone();
-        let trans_out_tx_clone = trans_out_tx.clone();
-        thread::spawn(move || {
-            for stream in listener.incoming() {
-                let mut tcp = NetChannelTCP::from_stream(stream.unwrap());
-                p2pnetwork_clone.lock().unwrap().tcps.push(tcp.clone_channel());
-                let block_out_tx_clone2 = block_out_tx_clone.clone();
-                let trans_out_tx_clone2 = trans_out_tx_clone.clone();
-                // part of 6: listen from TCP channel of new neighbors
-                thread::spawn(move || {
-                    loop {
-                        let message = tcp.read_msg().unwrap();
-                        match message {
-                            NetMessage::BroadcastBlock(block) => {
-                                block_out_tx_clone2.send(block).unwrap();
-                            }
-                            NetMessage::BroadcastTx(trans) => {
-                                trans_out_tx_clone2.send(trans).unwrap();
-                            }
-                            NetMessage::RequestBlock(_) => todo!(),
-                            NetMessage::Unknown(_) => todo!(),
-                        };
-                    }
-                });
-            }
-        });
+        // let listener = TcpListener::bind(ip_addr.clone()).unwrap();     
+        // let p2pnetwork_clone = p2pnetwork.clone();
+        // let block_out_tx_clone = block_out_tx.clone();
+        // let trans_out_tx_clone = trans_out_tx.clone();
+        // thread::spawn(move || {
+        //     for stream in listener.incoming() {
+        //         let mut tcp = NetChannelTCP::from_stream(stream.unwrap());
+        //         p2pnetwork_clone.lock().unwrap().tcps.push(tcp.clone_channel());
+        //         let block_out_tx_clone2 = block_out_tx_clone.clone();
+        //         let trans_out_tx_clone2 = trans_out_tx_clone.clone();
+        //         // part of 6: listen from TCP channel of new neighbors
+        //         thread::spawn(move || {
+        //             loop {
+        //                 let message = tcp.read_msg().unwrap();
+        //                 match message {
+        //                     NetMessage::BroadcastBlock(block) => {
+        //                         block_out_tx_clone2.send(block).unwrap();
+        //                     }
+        //                     NetMessage::BroadcastTx(trans) => {
+        //                         trans_out_tx_clone2.send(trans).unwrap();
+        //                     }
+        //                     NetMessage::RequestBlock(_) => todo!(),
+        //                     NetMessage::Unknown(_) => todo!(),
+        //                 };
+        //             }
+        //         });
+        //     }
+        // });
 
         // 4. create TCP connections to all neighbors
         for neighbor_netaddress in neighbors {
