@@ -51,14 +51,32 @@ fn create_puzzle(chain_p: Arc<Mutex<BlockTree>>, tx_pool_p: Arc<Mutex<TxPool>>, 
     // Please fill in the blank
     // Filter transactions from tx_pool and get the last node of the longest chain.
     let pending_finalization_txs : Vec<Transaction> = vec![];
-    let filtered_txs : Vec<Transaction> = vec![];
+    let mut filtered_txs : Vec<Transaction> = vec![];
+    let mut filtered_txs_p = Arc::new(filtered_txs);
     let last_block_id = "";
 
-    while (filtered_txs.len() < 1) {
-        let pending_finalization_txs = chain_p.lock().unwrap().get_pending_finalization_txs();
-        let filtered_txs = tx_pool_p.lock().unwrap().filter_tx(tx_count, &pending_finalization_txs);
+    loop {
+        &filtered_txs_p = tx_pool_p.lock().unwrap().filter_tx(tx_count, &vec![]);
         let last_block_id = chain_p.lock().unwrap().working_block_id.clone();
+        if filtered_txs.len() >= 1 {
+            break;
+        }
     }
+    eprintln!("outer tx vec: {:?}", filtered_txs);
+
+    // while filtered_txs.len() < 1 {
+    //     thread::sleep(Duration::from_millis(1000));
+    //     // eprint!("{}", i.clone());
+    //     // i += 1;
+    //     // eprintln!("no txs filtered");
+    //     // let pending_finalization_txs = chain_p.lock().unwrap().get_pending_finalization_txs();
+    //     // let filtered_txs = tx_pool_p.lock().unwrap().filter_tx(tx_count, &pending_finalization_txs);
+    //     let mut filtered_txs = tx_pool_p.lock().unwrap().filter_tx(tx_count, &vec![]);
+    //     eprintln!("{:?}", filtered_txs);
+        
+    //     let last_block_id = chain_p.lock().unwrap().working_block_id.clone();
+    //     eprintln!("len: {}", filtered_txs.len());
+    // }
     
     // Please fill in the blank
     // Create a block node with the transactions and the merkle root.
