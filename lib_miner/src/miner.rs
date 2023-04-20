@@ -82,6 +82,7 @@ impl Miner {
             let puzzle = puzzle.clone();
             // set rng seed from function
             let mut rng = Pcg32::seed_from_u64(thread_0_seed + u64::from(i));
+            miner_p.lock().unwrap().is_running = true;
             let handle = thread::spawn(move || {                
                 loop {
                     
@@ -123,6 +124,7 @@ impl Miner {
             handle.join().unwrap();
         }
 
+        miner_p.lock().unwrap().is_running = false;
         // Get the first solution found by any thread.
         let x = if let Ok(solution) = rx.lock().unwrap().try_recv() {
             solution

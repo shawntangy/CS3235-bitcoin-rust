@@ -191,6 +191,7 @@ impl Nakamoto {
         let tx_pool_p_clone = tx_pool_p.clone();
         thread::spawn(move || {
             let mut cancellation_token_writer = cancellation_token_p_clone.write().unwrap();
+
             loop {
                 let puzzle_block = create_puzzle(chain_p_clone.clone(), tx_pool_p_clone.clone(), config.max_tx_in_one_block.clone(), config.mining_reward_receiver.clone());
                 let puzzle = puzzle_block.0;
