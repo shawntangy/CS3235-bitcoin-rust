@@ -52,32 +52,17 @@ fn create_puzzle(chain_p: Arc<Mutex<BlockTree>>, tx_pool_p: Arc<Mutex<TxPool>>, 
     // Filter transactions from tx_pool and get the last node of the longest chain.
     let pending_finalization_txs : Vec<Transaction> = vec![];
     let mut filtered_txs : Vec<Transaction> = vec![];
-    let mut filtered_txs_p = Arc::new(filtered_txs);
+    let p = &mut filtered_txs;
     let last_block_id = "";
 
     loop {
-        &filtered_txs_p = tx_pool_p.lock().unwrap().filter_tx(tx_count, &vec![]);
-        let last_block_id = chain_p.lock().unwrap().working_block_id.clone();
-        if filtered_txs.len() >= 1 {
+        if (*p).len() >= 1 {
             break;
         }
+        let pending_finalization_txs = chain_p.lock().unwrap().get_pending_finalization_txs();
+        (*p).append(&mut tx_pool_p.lock().unwrap().filter_tx(tx_count, &pending_finalization_txs));
+        let last_block_id = chain_p.lock().unwrap().working_block_id.clone();
     }
-    eprintln!("outer tx vec: {:?}", filtered_txs);
-
-    // while filtered_txs.len() < 1 {
-    //     thread::sleep(Duration::from_millis(1000));
-    //     // eprint!("{}", i.clone());
-    //     // i += 1;
-    //     // eprintln!("no txs filtered");
-    //     // let pending_finalization_txs = chain_p.lock().unwrap().get_pending_finalization_txs();
-    //     // let filtered_txs = tx_pool_p.lock().unwrap().filter_tx(tx_count, &pending_finalization_txs);
-    //     let mut filtered_txs = tx_pool_p.lock().unwrap().filter_tx(tx_count, &vec![]);
-    //     eprintln!("{:?}", filtered_txs);
-        
-    //     let last_block_id = chain_p.lock().unwrap().working_block_id.clone();
-    //     eprintln!("len: {}", filtered_txs.len());
-    // }
-    
     // Please fill in the blank
     // Create a block node with the transactions and the merkle root.
     // Leave the nonce and the block_id empty (to be filled after solving the puzzle).
@@ -171,7 +156,6 @@ impl Nakamoto {
         let cancellation_token_p_clone2 = cancellation_token_p.clone();
         thread::spawn(move || {
             Self::stdout_notify("# Waiting for IPC Requests ...".to_owned());
-            let mut cancellation_token_writer = cancellation_token_p_clone2.write().unwrap();
             for block in upd_block_in_rx {
                 // it would first check if it is valid including checking whether the block has enough prefix 0 for SHA256(nonce || puzzle)
                 let (is_valid, block_id) = block.validate_block(config.difficulty_leading_zero_len_acc);
@@ -187,7 +171,7 @@ impl Nakamoto {
                 // If the longest path and the last block on this path do not change, it continues its mining
                 // If not, it switches to the new longest path, creates a puzzle, and starts solving it by calling cancellation token
                 if chain_p_clone2.lock().unwrap().working_block_id.ne(&prev_working_id) {
-                    *cancellation_token_writer = true;
+                    *cancellation_token_p_clone2.write().unwrap() = true;
                 }
             }
         });
@@ -208,8 +192,6 @@ impl Nakamoto {
         let miner_p_clone = miner_p.clone();
         let tx_pool_p_clone = tx_pool_p.clone();
         thread::spawn(move || {
-            let mut cancellation_token_writer = cancellation_token_p_clone.write().unwrap();
-
             loop {
                 let puzzle_block = create_puzzle(chain_p_clone.clone(), tx_pool_p_clone.clone(), config.max_tx_in_one_block.clone(), config.mining_reward_receiver.clone());
                 let puzzle = puzzle_block.0;
@@ -219,10 +201,11 @@ impl Nakamoto {
                     None => {
                         // solution not found aka cancellation_token set to true
                         // reset cancellation_token to false and  gointo the next iteration of the loop to solve the new puzzle
-                        *cancellation_token_writer = false;
+                        *cancellation_token_p_clone.write().unwrap() = false;
                     }
                     Some(puzzle_solution) => {
                         // solution found
+                        eprintln!("Solved puzzle");
                         let nonce = puzzle_solution.nonce;
                         let block_id = puzzle_solution.hash;
                         block.header.nonce = nonce;
@@ -232,6 +215,7 @@ impl Nakamoto {
                         // broadcast it by sending to sender mspc
                         block_out_tx.send(block).unwrap();
                         // create a new puzzle, and solve the new puzzle by going into the next iteration of the loop
+                        *cancellation_token_p_clone.write().unwrap() = false;
                     }
                 }
             }

@@ -332,6 +332,7 @@ fn main() {
         loop {
             let mut nakamoto_resp = String::new();
             nakamoto_stdout_p_cloned_c.lock().unwrap().read_line(&mut nakamoto_resp).unwrap();
+            // eprintln!("nakamoto_resp: {}", nakamoto_resp);
             let ipc_nakamoto_resp : IPCMessageRespNakamoto = serde_json::from_str(&nakamoto_resp).unwrap();
             let mut app_c = app_ui_ref_c.lock().unwrap();
             match ipc_nakamoto_resp {

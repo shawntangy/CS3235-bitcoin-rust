@@ -96,7 +96,7 @@ fn main() {
     // bin_nakamoto has only one optional argument: the path to the seccomp policy file
     // If the argument is provided, bin_nakamoto will read and apply the seccomp policy at the beginning of the program
     // Otherwise, it will proceed to the normal execution
-    
+
     // let maybe_policy_path = std::env::args().nth(1);
     // if let Some(policy_path) = maybe_policy_path { 
     //     // Please fill in the blank
@@ -131,7 +131,7 @@ fn main() {
                 let ipc_msg_req : IPCMessageReq = serde_json::from_str(&stdin_input).unwrap();
                 let ipc_msg_resp = match ipc_msg_req {
                     IPCMessageReq::Initialize(blocktree_json, tx_pool_json, config_json) => {
-                        println!("nakamoto already initialized but will re-initalized again here!");
+                        eprintln!("nakamoto already initialized but will re-initalized again here!");
                         let nakamoto = Nakamoto::create_nakamoto(blocktree_json, tx_pool_json, config_json);
                         IPCMessageResp::Initialized
                     }
@@ -191,7 +191,7 @@ fn main() {
             println!("{}", resp_str);
         }
         _ => {
-            println!("1st call must be initialize!");
+            eprintln!("1st call must be initialize!");
         }
     }
 

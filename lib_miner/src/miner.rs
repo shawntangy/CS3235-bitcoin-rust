@@ -7,6 +7,7 @@
 // You can see detailed instructions in the comments below.
 // You can also look at the unit tests in ./lib.rs to understand the expected behavior of the miner.
 
+use std::fs::read;
 use std::{thread, convert};
 use std::collections::BTreeMap;
 use std::sync::{Arc, Mutex, RwLock};
@@ -73,24 +74,36 @@ impl Miner {
 
         // Create a channel to communicate between threads.
         let (tx, rx) = std::sync::mpsc::channel::<Option<PuzzleSolution>>();
-        let rx = Arc::new(Mutex::new(rx));
+        // let rx = Arc::new(Mutex::new(rx));
+
         // Spawn threads to search for a solution.
         for i in 0..thread_count {
             let tx = tx.clone();
             //let rx = rx.clone();
             let miner_p = miner_p.clone();
-            let cancellation_token = cancellation_token.clone();
+            let c_lock = cancellation_token.clone();
+            // let c_lock_clone = c_lock.clone();
             let puzzle = puzzle.clone();
             // set rng seed from function
             let mut rng = Pcg32::seed_from_u64(thread_0_seed + u64::from(i));
             miner_p.lock().unwrap().is_running = true;
             let handle = thread::spawn(move || {                
                 loop {
-                    
-                    // Check if the cancellation_token is true to break the loop
-                    if *cancellation_token.read().unwrap() {
-                        break;
+                    //eprintln!("in loop");
+                    // Check if the cancellation_token is true to break the loop\
+
+                    if let Ok(mut read_guard) = c_lock.read() {
+                        // the returned write_guard implements `Deref` giving us easy access to the target value
+                        if *read_guard {
+                            break;
+                        }
                     }
+
+                    // let boolean = c_lock.read().unwrap();
+                    // if  *boolean{
+                    //     break;
+                    // }
+                    //eprintln!("aft if");
 
                     let nonce = Alphanumeric.sample_string(&mut rng, nonce_len.into());
 
@@ -101,17 +114,24 @@ impl Miner {
                     // Check if the hash satisfies the difficulty level.
                     let hash_str = format!("{:x}", hash);
                     //println!("supposed hash_str: {}",hash_str);
+                    // eprintln!("{}", i);
                     if hash_str.starts_with(&"0".repeat(leading_zero_len as usize)) {
-                        println!("Matched: {}",hash_str);
-                        let mut token = cancellation_token.write().unwrap();
-                        *token = true;
+                        // println!("Matched: {}",hash_str);
+                        eprintln!("test");
+                        // assert!(c_lock.try_write().is_err());
+                        *c_lock.write().unwrap() = true;
+                        eprintln!("test2");
                         let ans = PuzzleSolution{
                             puzzle,
                             nonce,
                             hash: hash_str
                         };
-                        tx.send(Some(ans))
-                        .unwrap();
+                        tx.send(Some(ans)).unwrap();
+                        
+                        // if let Ok(mut write_guard) = c_lock.write() {
+                        //     // the returned write_guard implements `Deref` giving us easy access to the target value
+                        //     *write_guard = true;
+                        // }
                         break;
                     }
                 }
@@ -127,7 +147,7 @@ impl Miner {
 
         miner_p.lock().unwrap().is_running = false;
         // Get the first solution found by any thread.
-        let x = if let Ok(solution) = rx.lock().unwrap().try_recv() {
+        let x = if let Ok(solution) = rx.try_recv() {
             solution
         }else{
             None
