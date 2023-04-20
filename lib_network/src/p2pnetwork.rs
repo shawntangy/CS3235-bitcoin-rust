@@ -140,8 +140,10 @@ impl P2PNetwork {
                 }
             });
         }
-
+        println!("[P2PNetwork] All neighbors connected.");
+        println!("[P2PNetwork] Starting processing received messages thread.");
         // part of 6: listen from blocknode channel and broadcast received blocknode
+        println!("[P2PNetwork] Starting broadcasting blocks thread.");
         let p2pnetwork_clone3 = p2pnetwork.clone();
         thread::spawn(move || {
             for block in &block_out_rx {
@@ -156,14 +158,12 @@ impl P2PNetwork {
                     p2pnetwork_temp.sent_blocks.insert(block.header.block_id.clone());
                     p2pnetwork_temp.send_msg_count += 1;
                 }
-                else {
-                    println!("Duplicated block received and not broadcasted: {:?}", block);
-                }
             }
     
         });
         
         // part of 6: listen from transaction channel and broadcast received transaction
+        println!("[P2PNetwork] Starting broadcasting transactions thread.");
         let p2pnetwork_clone4 = p2pnetwork.clone();
         thread::spawn(move || {
             for trans in &trans_out_rx {
@@ -177,9 +177,6 @@ impl P2PNetwork {
                     }
                     p2pnetwork_temp.sent_trans.insert(trans.gen_hash());
                     p2pnetwork_temp.send_msg_count += 1;
-                }
-                else {
-                    println!("Duplicated tx received and not broadcasted: {:?}", trans);
                 }
             }
         });
@@ -202,7 +199,7 @@ impl P2PNetwork {
         let mut status_map = BTreeMap::new();
         status_map.insert("#address".to_string(), format!("ip: {} port: {}", self.address.ip, self.address.port));
         status_map.insert("#recv_msg".to_string(), self.recv_msg_count.to_string());
-        status_map.insert("send_msg".to_string(), self.send_msg_count.to_string());
+        status_map.insert("#send_msg".to_string(), self.send_msg_count.to_string());
         status_map
     }
 
