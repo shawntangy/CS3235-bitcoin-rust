@@ -190,7 +190,7 @@ impl Transaction {
         return match verify_result {
             Ok(()) => true,
             Err(e) => {
-                println!("[Signature verification failed]: {}", e);
+                eprintln!("[Signature verification failed]: {}", e);
                 false
             }
         }
@@ -274,23 +274,23 @@ impl BlockTree {
     /// (e.g., working_block_id, finalized_block_id, finalized_balance_map, finalized_tx_ids, block_depth, children_map, all_blocks, etc)
     pub fn add_block(&mut self, block: BlockNode, leading_zero_len: u16) -> () {
         // Please fill in the blank
-         println!("#################### ADD_BLOCK FUNCTION CALLED #############################");
+        eprintln!("#################### ADD_BLOCK FUNCTION CALLED #############################");
         // 1. The block must have a valid nonce and the hash in the puzzle solution satisfies the difficulty requirement.
         // 2. The block_id of the block must be equal to the computed hash in the puzzle solution.
         // 4. The transactions in the block must be valid. See the `verify_sig` function in the `Transaction` struct for details.
         if !block.validate_block(leading_zero_len).0 {
-            println!("invalid block found. block_id : {}", block.header.block_id.clone());
+            eprintln!("invalid block found. block_id : {}", block.header.block_id.clone());
             return; // ignore block
         }
         // 3. The block does not exist in the block tree or the orphan map.
         if (self.all_blocks.contains_key(&block.header.block_id) || self.orphans.contains_key(&block.header.block_id)) {
-            println!("duplicated block found. block_id : {}", block.header.block_id.clone());
+            eprintln!("duplicated block found. block_id : {}", block.header.block_id.clone());
             return;
         }
         // 5. The parent of the block must exist in the block tree.
         // Otherwise, it will be bookkeeped in the orphans map.
         if (!self.all_blocks.contains_key(&block.header.parent)) {
-            println!("orphan block found. block_id : {}", block.header.block_id.clone());
+            eprintln!("orphan block found. block_id : {}", block.header.block_id.clone());
             self.orphans.insert(block.header.block_id.clone(), block);
             return;
         }
@@ -307,7 +307,7 @@ impl BlockTree {
             for tx in self.get_block(curr_block_id.clone()).unwrap().transactions_block.transactions {
                 let tx_id = tx.gen_hash();
                 if set.contains(&tx_id) { // ignore block if it has a tx that is duplicated in an ancestor block
-                    println!("duplicated tx found. tx_id : {}", tx_id.clone());
+                    eprintln!("duplicated tx found. tx_id : {}", tx_id.clone());
                     return;
                 }
             }
@@ -348,7 +348,7 @@ impl BlockTree {
                 let new_sender_balance = sender_balance - amount;
                 balance_map_copy.insert(sender_id.clone(), new_sender_balance);
                 if (new_sender_balance < 0 && sender_id.ne("GENESIS")) { // sender does not have enough balance. if sender is genesis, ignore check for balance since we assume genesis has infinite money
-                    println!("sender not enough balance found.\nsender_id : {}\namount to be sent: {}\nsender_balance before sending : {}\nsender_balance after sending : {}", sender_id.clone(), amount.clone(), sender_balance.clone(), new_sender_balance.clone());
+                    eprintln!("sender not enough balance found.\nsender_id : {}\namount to be sent: {}\nsender_balance before sending : {}\nsender_balance after sending : {}", sender_id.clone(), amount.clone(), sender_balance.clone(), new_sender_balance.clone());
                     return;
                 }
                 let receiver_balance = balance_map_copy.get(&receiver_id).unwrap().clone();
@@ -418,16 +418,16 @@ impl BlockTree {
             }
             // give mining reward to reward_receiver
             let reward_receiver_id = pending_finalization_blocks[0].header.reward_receiver.clone();
-            println!("reward_receiver_id : {}", reward_receiver_id.clone());
+            eprintln!("reward_receiver_id : {}", reward_receiver_id.clone());
             if (!self.finalized_balance_map.contains_key(&reward_receiver_id)) {
                 self.finalized_balance_map.insert(reward_receiver_id.clone(), 0);
             }
             let reward_receiver_balance = self.finalized_balance_map.get(&reward_receiver_id).unwrap().clone();
             let new_reward_receiver_balance = reward_receiver_balance + 10;
             self.finalized_balance_map.insert(reward_receiver_id, new_reward_receiver_balance);
-            println!("a block is newly finalized.\nfinalized_balance_map:");
+            eprintln!("a block is newly finalized.\nfinalized_balance_map:");
             for (key, value) in &self.finalized_balance_map {
-                println!("{}: {}", key, value);
+                eprintln!("{}: {}", key, value);
             }
         }
         
