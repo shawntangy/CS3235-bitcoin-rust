@@ -211,8 +211,8 @@ mod tests {
     #[test]
     fn test_p2pnetwork_duplicated_block_and_tx() {
         // create fake nodes
-        let fake_node1 = TcpListener::bind("127.0.0.1:9012").unwrap();
-        let fake_node2 = TcpListener::bind("127.0.0.1:9013").unwrap();
+        let fake_node1 = TcpListener::bind("127.0.0.1:8012").unwrap();
+        let fake_node2 = TcpListener::bind("127.0.0.1:8013").unwrap();
         let _fake_node1_handle = thread::spawn(move || {
             for stream in fake_node1.incoming() {
                 println!("--- fake_neighbor_1 INCOMING STREAM ---");
@@ -234,10 +234,10 @@ mod tests {
             trans_out_tx,
             req_block_id_out_tx,
         ) = P2PNetwork::create(
-            NetAddress { ip: "127.0.0.1".to_owned(), port: 9011 },
+            NetAddress { ip: "127.0.0.1".to_owned(), port: 8011 },
             vec![
-                NetAddress { ip: "127.0.0.1".to_owned(), port: 9012 },
-                NetAddress { ip: "127.0.0.1".to_owned(), port: 9013 }
+                NetAddress { ip: "127.0.0.1".to_owned(), port: 8012 },
+                NetAddress { ip: "127.0.0.1".to_owned(), port: 8013 }
             ]
         );
 
@@ -281,8 +281,14 @@ mod tests {
         thread::sleep(Duration::from_millis(200));
 
         // Expected Log
-        // running 1 test
+        // // running 1 test
 
+        // [P2PNetwork] All neighbors connected.
+        // [P2PNetwork] Starting processing received messages thread.
+        // [P2PNetwork] Starting broadcasting blocks thread.
+        // [P2PNetwork] Starting broadcasting transactions thread.
+
+        // [NetChannel] Trying to connect to 127.0.0.1:8012
         // --- fake_neighbor_1 INCOMING STREAM ---
         // [fake_neighbor] [BEGIN]
         // [fake_neighbor] [Write thread]
@@ -292,6 +298,7 @@ mod tests {
         // [handle_client] [Read] {"BroadcastTx":{"sender":"AAA","receiver":"DDD","message":"good","sig":"blabla"}}
         // [handle_client] [Read] {"BroadcastBlock":{"header":{"parent":"ZZZZ","merkle_root":"12345","timestamp":345,"block_id":"","nonce":"98765","reward_receiver":"AAA"},"transactions_block":{"merkle_tree":{"hashes":[]},"transactions":[]}}}
         
+        // [NetChannel] Trying to connect to 127.0.0.1:8013
         // --- fake_neighbor_2 INCOMING STREAM ---
         // [fake_neighbor] [BEGIN]
         // [fake_neighbor] [Write thread]
@@ -300,11 +307,6 @@ mod tests {
         // [handle_client] [Read] {"BroadcastTx":{"sender":"hello","receiver":"hi","message":"msg","sig":"sig"}}
         // [handle_client] [Read] {"BroadcastTx":{"sender":"AAA","receiver":"DDD","message":"good","sig":"blabla"}}
         // [handle_client] [Read] {"BroadcastBlock":{"header":{"parent":"ZZZZ","merkle_root":"12345","timestamp":345,"block_id":"","nonce":"98765","reward_receiver":"AAA"},"transactions_block":{"merkle_tree":{"hashes":[]},"transactions":[]}}}
-        
-        // Duplicated block received and not broadcasted: BlockNode { header: BlockNodeHeader { parent: "hahaha", merkle_root: "0987", timestamp: 123, block_id: "2222", nonce: "1111", reward_receiver: "AAA" }, transactions_block: Transactions { merkle_tree: MerkleTree { hashes: [] }, transactions: [] } }
-        // Duplicated block received and not broadcasted: BlockNode { header: BlockNodeHeader { parent: "ZZZZ", merkle_root: "12345", timestamp: 345, block_id: "", nonce: "98765", reward_receiver: "AAA" }, transactions_block: Transactions { merkle_tree: MerkleTree { hashes: [] }, transactions: [] } }
-        // Duplicated tx received and not broadcasted: Transaction { sender: "hello", receiver: "hi", message: "msg", sig: "sig" }
-        // Duplicated tx received and not broadcasted: Transaction { sender: "AAA", receiver: "DDD", message: "good", sig: "blabla" }
     }
 }
 

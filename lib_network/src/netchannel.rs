@@ -61,6 +61,7 @@ impl NetChannelTCP {
     pub fn from_addr(addr: &NetAddress) -> Result<Self,String> {
         // Please fill in the blank
         //todo!();
+        println!("[NetChannel] Trying to connect to {}:{}", addr.ip, addr.port);
         match TcpStream::connect(format!("{}:{}", addr.ip, addr.port)) {
             Ok(stream) => {
                 let reader = BufReader::new(stream.try_clone().unwrap());
