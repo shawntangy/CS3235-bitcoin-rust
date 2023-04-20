@@ -97,10 +97,13 @@ fn main() {
     // If the argument is provided, bin_nakamoto will read and apply the seccomp policy at the beginning of the program
     // Otherwise, it will proceed to the normal execution
     let maybe_policy_path = std::env::args().nth(1);
-    if let Some(policy_path) = maybe_policy_path {
+    if let Some(policy_path) = maybe_policy_path { 
         // Please fill in the blank
         // If the first param is provided, read the seccomp config and apply it
-        
+        let policy = read_string_from_file(&policy_path);
+        let filter_map: BpfMap = seccompiler::compile_from_json(policy.as_bytes(), std::env::consts::ARCH.try_into().unwrap()).unwrap();
+        let filter = filter_map.get("main_thread").unwrap();
+        seccompiler::apply_filter(&filter).unwrap();
     }
 
     // The main logic of the bin_nakamoto starts here
