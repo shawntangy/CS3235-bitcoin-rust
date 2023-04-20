@@ -136,8 +136,14 @@ fn main() {
                         IPCMessageResp::Initialized
                     }
                     IPCMessageReq::GetAddressBalance(user_id) => {
-                        let balance = nakamoto.chain_p.lock().unwrap().finalized_balance_map.get(&user_id).unwrap().clone();
-                        IPCMessageResp::AddressBalance(user_id, balance)
+                        match nakamoto.chain_p.lock().unwrap().finalized_balance_map.get(&user_id) {
+                            Some(x) => {
+                                IPCMessageResp::AddressBalance(user_id, x.clone())
+                            }
+                            None => {
+                                IPCMessageResp::AddressBalance(user_id, 0)
+                            }
+                        }
                     }
                     IPCMessageReq::PublishTx(data_string, signature) => {
                         // what is signature used for?
