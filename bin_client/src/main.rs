@@ -135,6 +135,7 @@ fn main() {
     // - Get nakamoto stdin and stdout
     let nakamoto_stdin = bin_nakamoto_process.stdin.take().unwrap();
     let nakamoto_stdout = bin_nakamoto_process.stdout.take().unwrap();
+    let nakamoto_stderr = bin_nakamoto_process.stderr.take().unwrap();
 
     let nakamoto_stdin_p = Arc::new(Mutex::new(nakamoto_stdin));
 
@@ -146,6 +147,7 @@ fn main() {
 
     // - Create buffer readers if necessary
     let nakamoto_stdout_p = Arc::new(Mutex::new(BufReader::new(nakamoto_stdout)));
+    let nakamoto_stderr_p = Arc::new(Mutex::new(BufReader::new(nakamoto_stderr)));
     let bin_wallet_stdout_p = Arc::new(Mutex::new(BufReader::new(bin_wallet_stdout)));
 
     // - Send initialization requests to bin_nakamoto and bin_wallet
@@ -330,6 +332,7 @@ fn main() {
         loop {
             let mut nakamoto_resp = String::new();
             nakamoto_stdout_p_cloned_c.lock().unwrap().read_line(&mut nakamoto_resp).unwrap();
+            println!("nakamoto_resp {}", nakamoto_resp);
             let ipc_nakamoto_resp : IPCMessageRespNakamoto = serde_json::from_str(&nakamoto_resp).unwrap();
             let mut app_c = app_ui_ref_c.lock().unwrap();
             match ipc_nakamoto_resp {
@@ -430,6 +433,20 @@ fn main() {
 
     });
 
+    let app_ui_ref_e = app_arc.clone();
+    let nakamoto_stderr_p_cloned_a = nakamoto_stderr_p.clone();
+    let handle_nakamoto_debug_resp = thread::spawn(move || {
+        loop {
+            if app_ui_ref_e.lock().unwrap().should_quit {
+                break;
+            }
+
+            let mut nakamoto_debug_resp = String::new();
+            nakamoto_stderr_p_cloned_a.lock().unwrap().read_line(&mut nakamoto_debug_resp);
+            app_ui_ref_e.lock().unwrap().stderr_log.push(nakamoto_debug_resp);
+        }
+    });
+
     // UI thread. Modify it to suit your needs. 
     let app_ui_ref_d = app_arc.clone();
     let bin_wallet_stdin_p_cloned_c = bin_wallet_stdin_p.clone();
@@ -527,6 +544,7 @@ fn main() {
     handle_nakamoto_req_update.join().unwrap();
     handle_nakamoto_resp.join().unwrap();
     handle_wallet_resp.join().unwrap();
+    handle_nakamoto_debug_resp.join().unwrap();
 
     //let ecode1 = nakamoto_process.wait().expect("failed to wait on child nakamoto");
     let ecode1 = bin_nakamoto_process.wait().expect("failed to wait on child nakamoto");
