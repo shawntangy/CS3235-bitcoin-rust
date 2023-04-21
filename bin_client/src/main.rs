@@ -333,7 +333,8 @@ fn main() {
 
     let app_ui_ref_c = app_arc.clone();
     let nakamoto_stdout_p_cloned_c = nakamoto_stdout_p.clone();
-    let mut counter = 1;
+    let nakamoto_config_path_cloned = nakamoto_config_path.clone();
+    //let mut counter = 1;
     let handle_nakamoto_resp = thread::spawn(move || {
         loop {
             let mut nakamoto_resp = String::new();
@@ -373,26 +374,28 @@ fn main() {
                 }
 
                 IPCMessageRespNakamoto::StateSerialization(blocktree_json_string, tx_pool_json_string) => {
-                    let mut save_path = String::new();
-
-                    save_path.push_str("tests/nakamoto_config_");
-                    save_path.push_str(&user_name);
-                    save_path.push_str(&(counter.to_string()));
+                    //let mut save_path = String::new();
+                    let mut save_path = nakamoto_config_path_cloned.clone();
+                    //save_path.push_str("tests/nakamoto_config_");
+                    //save_path.push_str(&user_name);
+                    //save_path.push_str(&(counter.to_string()));
+                    save_path.push_str("/");
+                    save_path.push_str(&(SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap().as_millis().to_string()));                    
 
                     let mut block_tree_file = save_path.clone();
                     let mut tx_pool_file = save_path.clone();
 
-                    fs::create_dir_all(save_path).unwrap();
+                    //fs::create_dir_all(save_path).unwrap();
                     
-                    block_tree_file.push_str("/BlockTree.json");
+                    block_tree_file.push_str("-BlockTree.json");
                     let mut file = OpenOptions::new().create_new(true).write(true).open(block_tree_file).unwrap();
                     file.write_all(blocktree_json_string.as_bytes()).unwrap();
 
-                    tx_pool_file.push_str("/TxPool.json");
+                    tx_pool_file.push_str("-TxPool.json");
                     file = OpenOptions::new().create_new(true).write(true).open(tx_pool_file).unwrap();
                     file.write_all(tx_pool_json_string.as_bytes()).unwrap();
 
-                    counter += 1;
+                    //counter += 1;
                 }
 
                 IPCMessageRespNakamoto::Quitting => {
