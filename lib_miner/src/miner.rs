@@ -117,10 +117,10 @@ impl Miner {
                     // eprintln!("{}", i);
                     if hash_str.starts_with(&"0".repeat(leading_zero_len as usize)) {
                         // println!("Matched: {}",hash_str);
-                        eprintln!("test");
+                        // eprintln!("test");
                         // assert!(c_lock.try_write().is_err());
                         *c_lock.write().unwrap() = true;
-                        eprintln!("test2");
+                        // eprintln!("test2");
                         let ans = PuzzleSolution{
                             puzzle,
                             nonce,
