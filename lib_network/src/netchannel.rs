@@ -17,6 +17,8 @@ use serde::{Serialize, Deserialize};
 use std::net::{TcpStream, SocketAddr, SocketAddrV4};
 use std::io::{Read, Write};
 use std::io::BufReader;
+use std::time::Duration;
+use std::thread::sleep;
 
 /// The struct to represent a network address.
 #[derive(PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Serialize, Deserialize, Debug)]
@@ -58,18 +60,53 @@ pub struct NetChannelTCP {
 impl NetChannelTCP {
     /// Create a new NetChannelTCP from a NetAddress and establish the TCP connection.
     /// Return an error string if the connection fails.
+    // pub fn from_addr(addr: &NetAddress) -> Result<Self,String> {
+    //     // Please fill in the blank
+    //     //todo!();
+    //     eprintln!("[NetChannel] Trying to connect to {}:{}", addr.ip, addr.port);
+    //     match TcpStream::connect(format!("{}:{}", addr.ip, addr.port)) {
+    //         Ok(stream) => {
+    //             let reader = BufReader::new(stream.try_clone().unwrap());
+    //             Ok(Self { stream, reader })
+    //         },
+    //         Err(e) => Err(e.to_string())
+    //     }
+    // }
+
     pub fn from_addr(addr: &NetAddress) -> Result<Self,String> {
-        // Please fill in the blank
-        //todo!();
-        eprintln!("[NetChannel] Trying to connect to {}:{}", addr.ip, addr.port);
+        //eprintln!("[NetChannel] Trying to connect to {}:{}", addr.ip, addr.port);
         match TcpStream::connect(format!("{}:{}", addr.ip, addr.port)) {
             Ok(stream) => {
-                let reader = BufReader::new(stream.try_clone().unwrap());
-                Ok(Self { stream, reader })
+                match stream.try_clone() {
+                    Ok(cloned_stream) => {
+                        let reader = BufReader::new(cloned_stream);
+                        Ok(Self { stream, reader })
+                    },
+                    Err(e) => Err(e.to_string())
+                }
             },
             Err(e) => Err(e.to_string())
         }
     }
+
+    pub fn from_addr_retry(addr: &NetAddress, retries: usize, delay: Duration) -> Result<Self, String> {
+        for i in 0..retries {
+            match NetChannelTCP::from_addr(addr) {
+                Ok(tcp) => return Ok(tcp),
+                Err(e) => {
+                    //eprintln!("[NetChannel] Failed to connect to {}:{}. Retrying in {} seconds... ({}/{})", addr.ip, addr.port, delay.as_secs(), i+1, retries);
+                    if i == retries-1 {
+                        return Err(e);
+                    } else {
+                        sleep(delay);
+                    }
+                }
+            }
+        }
+    
+        unreachable!()
+    }
+
 
     /// Create a new NetChannelTCP from a TcpStream. 
     /// This is useful for creating a NetChannelTCP instance from the listener side.
