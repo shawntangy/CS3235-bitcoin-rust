@@ -195,8 +195,9 @@ impl Nakamoto {
         let tx_pool_p_clone = tx_pool_p.clone();
         thread::spawn(move || {
             loop {
-                let finalized_blocks = chain_p_clone.lock().unwrap().get_pending_finalization_blocks();
-                tx_pool_p_clone.lock().unwrap().remove_txs_from_finalized_blocks(&finalized_blocks);
+                let genesis_id = chain_p_clone.lock().unwrap().root_id.clone();
+                let finalized_blocks = chain_p_clone.lock().unwrap().get_finalized_blocks_since(genesis_id);
+                tx_pool_p_clone.lock().unwrap().remove_txs_from_finalized_blocks(&finalized_blocks);                
                 let puzzle_block = create_puzzle(chain_p_clone.clone(), tx_pool_p_clone.clone(), config.max_tx_in_one_block.clone(), config.mining_reward_receiver.clone());
                 let puzzle = puzzle_block.0;
                 let mut blocknode = puzzle_block.1;
