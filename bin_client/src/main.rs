@@ -321,7 +321,7 @@ fn main() {
             balance_status_req_str.push('\n');
             nakamoto_stdin_p_cloned_c.lock().unwrap().write_all(&balance_status_req_str.as_bytes()).unwrap();
 
-            thread::sleep(Duration::from_millis(500));
+            thread::sleep(Duration::from_millis(200));
         }
     });
 
@@ -419,6 +419,7 @@ fn main() {
                 IPCMessageRespWallet::SignResponse(data_string, signature) => {
                     let pub_tx_req = IPCMessageReqNakamoto::PublishTx(data_string, signature);
                     let mut pub_tx_req_str = serde_json::to_string(&pub_tx_req).unwrap();
+                    // eprintln!("req str: {}",pub_tx_req_str);
                     pub_tx_req_str.push('\n');
                     nakamoto_stdin_p_cloned_d.lock().unwrap().write_all(pub_tx_req_str.as_bytes()).unwrap();
                 }

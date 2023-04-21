@@ -274,7 +274,7 @@ impl BlockTree {
     /// (e.g., working_block_id, finalized_block_id, finalized_balance_map, finalized_tx_ids, block_depth, children_map, all_blocks, etc)
     pub fn add_block(&mut self, block: BlockNode, leading_zero_len: u16) -> () {
         // Please fill in the blank
-        eprintln!("#################### ADD_BLOCK FUNCTION CALLED #############################");
+        // eprintln!("#################### ADD_BLOCK FUNCTION CALLED #############################");
         // 1. The block must have a valid nonce and the hash in the puzzle solution satisfies the difficulty requirement.
         // 2. The block_id of the block must be equal to the computed hash in the puzzle solution.
         // 4. The transactions in the block must be valid. See the `verify_sig` function in the `Transaction` struct for details.
@@ -301,7 +301,6 @@ impl BlockTree {
             let tx_id = tx.gen_hash();
             set.insert(tx_id);
         }
-
         let mut curr_block_id = block.header.parent.clone();
         loop {
             for tx in self.get_block(curr_block_id.clone()).unwrap().transactions_block.transactions {

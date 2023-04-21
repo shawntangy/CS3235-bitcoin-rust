@@ -100,7 +100,7 @@ impl P2PNetwork {
                 let trans_out_tx_clone2 = trans_out_tx_clone.clone();
                 // part of 6: listen from TCP channel of new neighbors
                 thread::spawn(move || {
-                    //loop {
+                    loop {
                         let message = tcp.read_msg().unwrap();
                         match message {
                             NetMessage::BroadcastBlock(block) => {
@@ -112,7 +112,7 @@ impl P2PNetwork {
                             NetMessage::RequestBlock(_) => todo!(),
                             NetMessage::Unknown(_) => todo!(),
                         };
-                    //}
+                    }
                 });
             }
         });
@@ -140,7 +140,7 @@ impl P2PNetwork {
                         .unwrap()
                         .tcps
                         .push(tcp.clone_channel());
-                    //loop {
+                    loop {
                         let message = tcp.read_msg().unwrap();
                         // part of 7: broadcast message to all neighbors by sending to mpsc which will in turn send to neighbor
                         match message {
@@ -154,7 +154,7 @@ impl P2PNetwork {
                             NetMessage::RequestBlock(_) => todo!(),
                             NetMessage::Unknown(_) => todo!(),
                         };
-                    //}
+                    }
                 } else {
                     eprintln!("Failed to connect to neighbor");
                     // Handle connection error
@@ -177,6 +177,7 @@ impl P2PNetwork {
                         for tcp in p2pnetwork_temp.tcps.iter_mut() { // iterate through the `tcps` Vec
                             tcp.write_msg(NetMessage::BroadcastBlock(block.clone()));
                         }
+                        upd_block_in_tx.send(block.clone()).unwrap();
                         p2pnetwork_temp.sent_blocks.insert(block.header.block_id.clone());
                         p2pnetwork_temp.send_msg_count += 1;
                     }
@@ -199,6 +200,7 @@ impl P2PNetwork {
                         for tcp in p2pnetwork_temp.tcps.iter_mut() { // iterate through the `tcps` Vec
                             tcp.write_msg(NetMessage::BroadcastTx(trans.clone()));
                         }
+                        upd_trans_in_tx.send(trans.to_owned()).unwrap();
                         p2pnetwork_temp.sent_trans.insert(trans.gen_hash());
                         p2pnetwork_temp.send_msg_count += 1;
                     }

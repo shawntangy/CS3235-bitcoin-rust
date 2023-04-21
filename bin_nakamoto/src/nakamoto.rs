@@ -58,11 +58,11 @@ fn create_puzzle(chain_p: Arc<Mutex<BlockTree>>, tx_pool_p: Arc<Mutex<TxPool>>, 
 
     loop {
         if (*p).len() >= 1 {
+            (*last_block_id_p).push_str(&chain_p.lock().unwrap().working_block_id);
             break;
         }
         let pending_finalization_txs = chain_p.lock().unwrap().get_pending_finalization_txs();
         (*p).append(&mut tx_pool_p.lock().unwrap().filter_tx(tx_count, &pending_finalization_txs));
-        (*last_block_id_p).push_str(&chain_p.lock().unwrap().working_block_id);
         // let last_block_id = chain_p.lock().unwrap().working_block_id.clone();
     }
     // Please fill in the blank
@@ -195,6 +195,8 @@ impl Nakamoto {
         let tx_pool_p_clone = tx_pool_p.clone();
         thread::spawn(move || {
             loop {
+                let finalized_blocks = chain_p_clone.lock().unwrap().get_pending_finalization_blocks();
+                tx_pool_p_clone.lock().unwrap().remove_txs_from_finalized_blocks(&finalized_blocks);
                 let puzzle_block = create_puzzle(chain_p_clone.clone(), tx_pool_p_clone.clone(), config.max_tx_in_one_block.clone(), config.mining_reward_receiver.clone());
                 let puzzle = puzzle_block.0;
                 let mut blocknode = puzzle_block.1;
