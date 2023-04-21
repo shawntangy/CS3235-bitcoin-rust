@@ -1,8 +1,263 @@
 {
     "main_thread": {
-        "mismatch_action": "kill_process",
-        "match_action": "allow",
-        "filter": [
-        ]
+      "mismatch_action": "kill_process",
+      "match_action": "allow",
+      "filter": [
+        {
+            "syscall": "statfs"
+        },
+        {
+            "syscall": "clone3"
+        },
+        {
+            "syscall": "close"
+        },
+        {
+            "syscall": "readlink"
+        },
+        {
+            "syscall": "execve"
+        },
+        {
+            "syscall": "readv"
+        },
+        {
+            "syscall": "statx"
+        },
+        {
+            "syscall": "getuid"
+        },
+        {
+            "syscall": "faccessat2"
+        },
+        {
+            "syscall": "bind"
+        },
+        {
+            "syscall": "pselect6"
+        },
+        {
+            "syscall": "getppid"
+        },
+        {
+            "syscall": "writev"
+        },
+        {
+            "syscall": "prctl"
+        },
+        {
+            "syscall": "mmap"
+        },
+        {
+            "syscall": "lseek"
+        },
+        {
+            "syscall": "poll"
+        },
+        {
+            "syscall": "mkdir"
+        },
+        {
+            "syscall": "accept"
+        },
+        {
+            "syscall": "rseq"
+        },
+        {
+            "syscall": "flock"
+        },
+        {
+            "syscall": "chdir"
+        },
+        {
+            "syscall": "rt_sigprocmask"
+        },
+        {
+            "syscall": "getdents64"
+        },
+        {
+            "syscall": "getcwd"
+        },
+        {
+            "syscall": "fcntl"
+        },
+        {
+            "syscall": "geteuid"
+        },
+        {
+            "syscall": "setpgid"
+        },
+        {
+            "syscall": "epoll_wait"
+        },
+        {
+            "syscall": "clone"
+        },
+        {
+            "syscall": "recvfrom"
+        },
+        {
+            "syscall": "epoll_ctl"
+        },
+        {
+            "syscall": "dup2"
+        },
+        {
+            "syscall": "set_tid_address"
+        },
+        {
+            "syscall": "close_range"
+        },
+        {
+            "syscall": "exit_group"
+        },
+        {
+            "syscall": "getegid"
+        },
+        {
+            "syscall": "connect"
+        },
+        {
+            "syscall": "futex"
+        },
+        {
+            "syscall": "listen"
+        },
+        {
+            "syscall": "rename"
+        },
+        {
+            "syscall": "pread64"
+        },
+        {
+            "syscall": "socketpair"
+        },
+        {
+            "syscall": "umask"
+        },
+        {
+            "syscall": "munmap"
+        },
+        {
+            "syscall": "sendmsg"
+        },
+        {
+            "syscall": "recvmsg"
+        },
+        {
+            "syscall": "brk"
+        },
+        {
+            "syscall": "read"
+        },
+        {
+            "syscall": "setsockopt"
+        },
+        {
+            "syscall": "getrandom"
+        },
+        {
+            "syscall": "mprotect"
+        },
+        {
+            "syscall": "epoll_create1"
+        },
+        {
+            "syscall": "accept4"
+        },
+        {
+            "syscall": "uname"
+        },
+        {
+            "syscall": "socket"
+        },
+        {
+            "syscall": "newfstatat"
+        },
+        {
+            "syscall": "getgid"
+        },
+        {
+            "syscall": "sendto"
+        },
+        {
+            "syscall": "set_robust_list"
+        },
+        {
+            "syscall": "chown"
+        },
+        {
+            "syscall": "sigaltstack"
+        },
+        {
+            "syscall": "clock_nanosleep"
+        },
+        {
+            "syscall": "sched_getaffinity"
+        },
+        {
+            "syscall": "dup"
+        },
+        {
+            "syscall": "kill"
+        },
+        {
+            "syscall": "pipe2"
+        },
+        {
+            "syscall": "wait4"
+        },
+        {
+            "syscall": "unlink"
+        },
+        {
+            "syscall": "openat"
+        },
+        {
+            "syscall": "rt_sigreturn"
+        },
+        {
+            "syscall": "ioctl"
+        },
+        {
+            "syscall": "access"
+        },
+        {
+            "syscall": "arch_prctl"
+        },
+        {
+            "syscall": "write"
+        },
+        {
+            "syscall": "sysinfo"
+        },
+        {
+            "syscall": "getpgrp"
+        },
+        {
+            "syscall": "exit"
+        },
+        {
+            "syscall": "rt_sigaction"
+        },
+        {
+            "syscall": "getpid"
+        },
+        {
+            "syscall": "setsid"
+        },
+        {
+            "syscall": "prlimit64"
+        },
+        {
+            "syscall": "madvise"
+        },
+        {
+            "syscall": "mknodat"
+        },
+        {
+            "syscall": "chmod"
+        }
+      ]
     }
-}
+  }

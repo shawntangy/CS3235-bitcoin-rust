@@ -189,6 +189,12 @@ fn main() {
     let client_seccomp_path = std::env::args().nth(1).expect("Please specify client seccomp path");
     // Please fill in the blank
     // sandboxing the bin_client (For part B). Leave it blank for part A.
+    let policy_path = client_seccomp_path; 
+    // If the first param is provided, read the seccomp config and apply it
+    let policy = read_string_from_file(&policy_path);
+    let filter_map: BpfMap = seccompiler::compile_from_json(policy.as_bytes(), std::env::consts::ARCH.try_into().unwrap()).unwrap();
+    let filter = filter_map.get("main_thread").unwrap();
+    seccompiler::apply_filter(&filter).unwrap();
     
 
     // Please fill in the blank

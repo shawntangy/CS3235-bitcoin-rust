@@ -1,3 +1,4 @@
+#!/bin/bash
 ./build.sh
 tmux has-session -t nakafour 2>/dev/null
 if [ $? != 0 ]; then
