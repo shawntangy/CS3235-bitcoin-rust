@@ -12,6 +12,8 @@
 use lib_chain::block::{BlockNode, Transaction, BlockId, TxId, self};
 use crate::netchannel::*;
 use std::collections::{HashMap, BTreeMap, HashSet};
+use std::time::Duration;
+use rand::Rng;
 use std::convert;
 use std::io::{Write, Read};
 use std::net::{TcpListener, TcpStream};
@@ -86,34 +88,40 @@ impl P2PNetwork {
         let (id_tx, id_rx) = mpsc::channel::<BlockId>();
 
         // 3. create a thread for accepting incoming TCP connections from neighbors
-        // let listener = TcpListener::bind(ip_addr.clone()).unwrap();     
-        // let p2pnetwork_clone = p2pnetwork.clone();
-        // let block_out_tx_clone = block_out_tx.clone();
-        // let trans_out_tx_clone = trans_out_tx.clone();
-        // thread::spawn(move || {
-        //     for stream in listener.incoming() {
-        //         let mut tcp = NetChannelTCP::from_stream(stream.unwrap());
-        //         p2pnetwork_clone.lock().unwrap().tcps.push(tcp.clone_channel());
-        //         let block_out_tx_clone2 = block_out_tx_clone.clone();
-        //         let trans_out_tx_clone2 = trans_out_tx_clone.clone();
-        //         // part of 6: listen from TCP channel of new neighbors
-        //         thread::spawn(move || {
-        //             loop {
-        //                 let message = tcp.read_msg().unwrap();
-        //                 match message {
-        //                     NetMessage::BroadcastBlock(block) => {
-        //                         block_out_tx_clone2.send(block).unwrap();
-        //                     }
-        //                     NetMessage::BroadcastTx(trans) => {
-        //                         trans_out_tx_clone2.send(trans).unwrap();
-        //                     }
-        //                     NetMessage::RequestBlock(_) => todo!(),
-        //                     NetMessage::Unknown(_) => todo!(),
-        //                 };
-        //             }
-        //         });
-        //     }
-        // });
+        let listener = TcpListener::bind(ip_addr.clone()).unwrap();     
+        let p2pnetwork_clone = p2pnetwork.clone();
+        let block_out_tx_clone = block_out_tx.clone();
+        let trans_out_tx_clone = trans_out_tx.clone();
+        thread::spawn(move || {
+            for stream in listener.incoming() {
+                let mut tcp = NetChannelTCP::from_stream(stream.unwrap());
+                p2pnetwork_clone.lock().unwrap().tcps.push(tcp.clone_channel());
+                let block_out_tx_clone2 = block_out_tx_clone.clone();
+                let trans_out_tx_clone2 = trans_out_tx_clone.clone();
+                // part of 6: listen from TCP channel of new neighbors
+                thread::spawn(move || {
+                    //loop {
+                        let message = tcp.read_msg().unwrap();
+                        match message {
+                            NetMessage::BroadcastBlock(block) => {
+                                block_out_tx_clone2.send(block).unwrap();
+                            }
+                            NetMessage::BroadcastTx(trans) => {
+                                trans_out_tx_clone2.send(trans).unwrap();
+                            }
+                            NetMessage::RequestBlock(_) => todo!(),
+                            NetMessage::Unknown(_) => todo!(),
+                        };
+                    //}
+                });
+            }
+        });
+
+        fn random_duration() -> Duration {
+            let mut rng = rand::thread_rng();
+            let msecs = rng.gen_range(1..=5000);
+            Duration::from_millis(msecs)
+        }
 
         // 4. create TCP connections to all neighbors
         for neighbor_netaddress in neighbors {
@@ -122,21 +130,34 @@ impl P2PNetwork {
             let block_out_tx_clone = block_out_tx.clone();
             let trans_out_tx_clone = trans_out_tx.clone();
             thread::spawn(move || {
-                let mut tcp = NetChannelTCP::from_addr(&neighbor_netaddress).unwrap();
-                p2pnetwork_clone2.lock().unwrap().tcps.push(tcp.clone_channel());
-                loop {
-                    let message = tcp.read_msg().unwrap();
-                    // part of 7: broadcast message to all neighbors by sending to mpsc which will in turn send to neighbor
-                    match message {
-                        NetMessage::BroadcastBlock(block) => {
-                            block_out_tx_clone.send(block).unwrap();
-                        }
-                        NetMessage::BroadcastTx(trans) => {
-                            trans_out_tx_clone.send(trans).unwrap();
-                        }
-                        NetMessage::RequestBlock(_) => todo!(),
-                        NetMessage::Unknown(_) => todo!(),
-                    };
+                //let mut tcp = NetChannelTCP::from_addr(&neighbor_netaddress).unwrap();
+                
+                if let Ok(mut tcp) = NetChannelTCP::from_addr_retry(&neighbor_netaddress, 5, random_duration()) {
+                    // Handle successful connection
+                    eprintln!("Successful connection to {}:{}",&neighbor_netaddress.ip,&neighbor_netaddress.port);
+                    p2pnetwork_clone2
+                        .lock()
+                        .unwrap()
+                        .tcps
+                        .push(tcp.clone_channel());
+                    //loop {
+                        let message = tcp.read_msg().unwrap();
+                        // part of 7: broadcast message to all neighbors by sending to mpsc which will in turn send to neighbor
+                        match message {
+                            NetMessage::BroadcastBlock(block) => {
+                                block_out_tx_clone.send(block).unwrap();
+
+                            }
+                            NetMessage::BroadcastTx(trans) => {
+                                trans_out_tx_clone.send(trans).unwrap();
+                            }
+                            NetMessage::RequestBlock(_) => todo!(),
+                            NetMessage::Unknown(_) => todo!(),
+                        };
+                    //}
+                } else {
+                    eprintln!("Failed to connect to neighbor");
+                    // Handle connection error
                 }
             });
         }
@@ -146,39 +167,43 @@ impl P2PNetwork {
         eprintln!("[P2PNetwork] Starting broadcasting blocks thread.");
         let p2pnetwork_clone3 = p2pnetwork.clone();
         thread::spawn(move || {
-            for block in &block_out_rx {
-                // part of 7: broadcast block to all neighbors
-                let mut p2pnetwork_temp = p2pnetwork_clone3.lock().unwrap(); // acquire the lock on the Arc<Mutex<P2PNetwork>> to access its fields
-                p2pnetwork_temp.recv_msg_count += 1;
-                // broadcast only if never send this block before
-                if (!p2pnetwork_temp.sent_blocks.contains(&block.header.block_id.clone())) {
-                    for tcp in p2pnetwork_temp.tcps.iter_mut() { // iterate through the `tcps` Vec
-                        tcp.write_msg(NetMessage::BroadcastBlock(block.clone()));
+            //loop {
+                for block in &block_out_rx {
+                    // part of 7: broadcast block to all neighbors
+                    let mut p2pnetwork_temp = p2pnetwork_clone3.lock().unwrap(); // acquire the lock on the Arc<Mutex<P2PNetwork>> to access its fields
+                    p2pnetwork_temp.recv_msg_count += 1;
+                    // broadcast only if never send this block before
+                    if (!p2pnetwork_temp.sent_blocks.contains(&block.header.block_id.clone())) {
+                        for tcp in p2pnetwork_temp.tcps.iter_mut() { // iterate through the `tcps` Vec
+                            tcp.write_msg(NetMessage::BroadcastBlock(block.clone()));
+                        }
+                        p2pnetwork_temp.sent_blocks.insert(block.header.block_id.clone());
+                        p2pnetwork_temp.send_msg_count += 1;
                     }
-                    p2pnetwork_temp.sent_blocks.insert(block.header.block_id.clone());
-                    p2pnetwork_temp.send_msg_count += 1;
                 }
-            }
-    
+            //}
         });
         
         // part of 6: listen from transaction channel and broadcast received transaction
         eprintln!("[P2PNetwork] Starting broadcasting transactions thread.");
         let p2pnetwork_clone4 = p2pnetwork.clone();
         thread::spawn(move || {
-            for trans in &trans_out_rx {
-                // part of 7: broadcast trans to all neighbors
-                let mut p2pnetwork_temp = p2pnetwork_clone4.lock().unwrap(); // acquire the lock on the Arc<Mutex<P2PNetwork>> to access its fields
-                p2pnetwork_temp.recv_msg_count += 1;
-                // broadcast only if never send this trans before
-                if (!p2pnetwork_temp.sent_trans.contains(&trans.gen_hash())) {
-                    for tcp in p2pnetwork_temp.tcps.iter_mut() { // iterate through the `tcps` Vec
-                        tcp.write_msg(NetMessage::BroadcastTx(trans.clone()));
+            //loop {
+                for trans in &trans_out_rx {
+                    //eprintln!("{:?}",trans);
+                    // part of 7: broadcast trans to all neighbors
+                    let mut p2pnetwork_temp = p2pnetwork_clone4.lock().unwrap(); // acquire the lock on the Arc<Mutex<P2PNetwork>> to access its fields
+                    p2pnetwork_temp.recv_msg_count += 1;
+                    // broadcast only if never send this trans before
+                    if (!p2pnetwork_temp.sent_trans.contains(&trans.gen_hash())) {
+                        for tcp in p2pnetwork_temp.tcps.iter_mut() { // iterate through the `tcps` Vec
+                            tcp.write_msg(NetMessage::BroadcastTx(trans.clone()));
+                        }
+                        p2pnetwork_temp.sent_trans.insert(trans.gen_hash());
+                        p2pnetwork_temp.send_msg_count += 1;
                     }
-                    p2pnetwork_temp.sent_trans.insert(trans.gen_hash());
-                    p2pnetwork_temp.send_msg_count += 1;
                 }
-            }
+            //}
         });
 
 
