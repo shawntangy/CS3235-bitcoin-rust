@@ -127,9 +127,11 @@ fn main() {
     
     // Please fill in the blank
     // - Create bin_nakamoto process:  Command::new("./target/debug/bin_nakamoto")...
-    let mut bin_nakamoto_process = Command::new("./target/debug/bin_nakamoto").stdin(Stdio::piped()).stdout(Stdio::piped()).stderr(Stdio::piped()).spawn().unwrap();
+    let nakamoto_seccomp_path = std::env::args().nth(3).expect("Please specify nakamoto seccomp path");
+    let mut bin_nakamoto_process = Command::new("./target/debug/bin_nakamoto").arg(nakamoto_seccomp_path).stdin(Stdio::piped()).stdout(Stdio::piped()).stderr(Stdio::piped()).spawn().unwrap();
     // - Create bin_wallet process:  Command::new("./target/debug/bin_wallet")...
-    let mut bin_wallet_process = Command::new("./target/debug/bin_wallet").stdin(Stdio::piped()).stdout(Stdio::piped()).spawn().unwrap();
+    let wallet_seccomp_path = std::env::args().nth(5).expect("Please specify wallet seccomp path");
+    let mut bin_wallet_process = Command::new("./target/debug/bin_wallet").arg(wallet_seccomp_path).stdin(Stdio::piped()).stdout(Stdio::piped()).spawn().unwrap();
     
     // - Get stdin and stdout of those processes
     // - Get nakamoto stdin and stdout
