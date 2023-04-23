@@ -347,7 +347,7 @@ impl BlockTree {
                 let new_sender_balance = sender_balance - amount;
                 balance_map_copy.insert(sender_id.clone(), new_sender_balance);
                 if (new_sender_balance < 0 && sender_id.ne("GENESIS")) { // sender does not have enough balance. if sender is genesis, ignore check for balance since we assume genesis has infinite money
-                    //eprintln!("sender not enough balance found.\nsender_id : {}\namount to be sent: {}\nsender_balance before sending : {}\nsender_balance after sending : {}", sender_id.clone(), amount.clone(), sender_balance.clone(), new_sender_balance.clone());
+                    eprintln!("sender not enough balance found.\nsender_id : {}\namount to be sent: {}\nsender_balance before sending : {}\nsender_balance after sending : {}", sender_id.clone(), amount.clone(), sender_balance.clone(), new_sender_balance.clone());
                     return;
                 }
                 let receiver_balance = balance_map_copy.get(&receiver_id).unwrap().clone();
@@ -424,10 +424,10 @@ impl BlockTree {
             let reward_receiver_balance = self.finalized_balance_map.get(&reward_receiver_id).unwrap().clone();
             let new_reward_receiver_balance = reward_receiver_balance + 10;
             self.finalized_balance_map.insert(reward_receiver_id, new_reward_receiver_balance);
-            eprintln!("a block is newly finalized.\nfinalized_balance_map:");
-            for (key, value) in &self.finalized_balance_map {
-                eprintln!("{}: {}", key, value);
-            }
+            // eprintln!("a block is newly finalized.\nfinalized_balance_map:");
+            // for (key, value) in &self.finalized_balance_map {
+            //     eprintln!("{}: {}", key, value);
+            // }
         }
         
         // When the parent block is added to the block tree, the block will be removed from the orphan map and checked against the conditions again.
