@@ -347,7 +347,7 @@ impl BlockTree {
                 let new_sender_balance = sender_balance - amount;
                 balance_map_copy.insert(sender_id.clone(), new_sender_balance);
                 if (new_sender_balance < 0 && sender_id.ne("GENESIS")) { // sender does not have enough balance. if sender is genesis, ignore check for balance since we assume genesis has infinite money
-                    eprintln!("sender not enough balance found.\nsender_id : {}\namount to be sent: {}\nsender_balance before sending : {}\nsender_balance after sending : {}", sender_id.clone(), amount.clone(), sender_balance.clone(), new_sender_balance.clone());
+                    //eprintln!("sender not enough balance found.\nsender_id : {}\namount to be sent: {}\nsender_balance before sending : {}\nsender_balance after sending : {}", sender_id.clone(), amount.clone(), sender_balance.clone(), new_sender_balance.clone());
                     return;
                 }
                 let receiver_balance = balance_map_copy.get(&receiver_id).unwrap().clone();
